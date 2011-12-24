@@ -72,7 +72,6 @@ class SkewT:
         self.wcolor = "#AAAAFF"         # Wetbulb Trace
         self.dgzcolor = "#0000FF"       # DGZ Trace Color
 
-
         # Lines to Plot
         self.dp = -25
         self.presrange = range(int(self.pmax), int(self.pmin-1), self.dp)
