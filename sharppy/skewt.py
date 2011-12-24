@@ -14,8 +14,10 @@ class SkewT:
         self.gCanvas = canvas
 
         # Canvas Widths
-        self.wid = kwargs.get('width', 800)
-        self.hgt = kwargs.get('height', 800)
+        self.rpad = 30
+        self.bpad = 20
+        self.wid = kwargs.get('width', 800) - self.rpad
+        self.hgt = kwargs.get('height', 800) - self.bpad
 
         # Where on Canvas to start drawing the SkewT
         self.tlx = 30        # Top-Left X
@@ -76,8 +78,8 @@ class SkewT:
         self.presrange = range(int(self.pmax), int(self.pmin-1), self.dp)
         self.isobars = [1000, 850, 700, 500, 300, 200, 100]
         self.isotherms = range(-160, 61, 10)
-        self.thtas = range(-70, 350, 10)
-        self.thtes = range(-160, 61, 5)
+        self.thtas = range(-70, 350, 20)
+        self.thtes = range(-160, 61, 10)
         self.mixws = [2] + range(4, 33, 4)
         self.wbot = self.pmax - 5           # Mixing Ratio Bottom Pressure
         self.wtop = 600                     # Mixing Ratio Top Pressure
@@ -99,7 +101,7 @@ class SkewT:
             fill=self.framebg, outline=self.framebg)
         self.gCanvas.create_rectangle((0, self.pres2Pix(self.pmax), self.brx,
             self.bry), fill=self.framebg, outline=self.framebg)
-        self.gCanvas.create_rectangle((self.brx, 0, self.wid,
+        self.gCanvas.create_rectangle((self.brx, 0, self.wid+self.rpad,
             self.pres2Pix(self.pmax)), fill=self.framebg, outline=self.framebg)
 
         # Plot frame around SkewT
