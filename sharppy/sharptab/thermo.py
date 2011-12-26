@@ -1,6 +1,5 @@
 ''' Thermodynamic Library '''
 import math
-from sharppy.sharptab.qc import qc
 from sharppy.sharptab.constants import *
 
 
@@ -25,7 +24,7 @@ def lifted(p, t, td, lev):
     -------
         Temperature (C [float]) of lifted parcel
     '''
-    if not qc(p) or not qc(t) or not qc(td): return RMISSD
+    if not QC(p) or not QC(t) or not QC(td): return RMISSD
     p2, t2 = drylift(p, t, td)
     return wetlift(p2, t2, lev)
 
@@ -47,7 +46,7 @@ def drylift(p, t, td):
     '''
     p2 = RMISSD
     t2 = RMISSD
-    if qc(p) or qc(t) or qc(td):
+    if QC(p) or QC(t) or QC(td):
         t2 = lcltemp(t, td)
         p2 = thalvl(theta(p, t, 1000.), t2)
     return p2, t2
@@ -66,7 +65,7 @@ def lcltemp(t, td):
     -------
         Temperature (C [float]) of the parcel at its LCL
     '''
-    if not qc(t) or not qc(td): return RMISSD
+    if not QC(t) or not QC(td): return RMISSD
     s = t - td
     dlt = s * (1.2185 + 0.001278 * t + s * (-0.00219 + 1.173e-5 * s -
         0.0000052 * t))
@@ -86,7 +85,7 @@ def thalvl(thta, t):
     -------
         Pressure Level (hPa [float]) of the parcel
     '''
-    if not qc(t) or not qc(thta): return RMISSD
+    if not QC(t) or not QC(thta): return RMISSD
     t += ZEROCNK
     thta += ZEROCNK
     return 1000. / ((thta / t)**(1/ROCP))
@@ -106,7 +105,7 @@ def theta(p, t, p2):
     -------
         Potential Temperature (C [float])
     '''
-    if not qc(p) or not qc(t) or not qc(p2): return RMISSD
+    if not QC(p) or not QC(t) or not QC(p2): return RMISSD
     t += ZEROCNK
     return (t * (p2 / p)**ROCP) - ZEROCNK
 
@@ -125,7 +124,7 @@ def wetlift(p, t, p2):
     -------
         Temperature (C [float])
     '''
-    if not qc(p) or not qc(t) or not qc(p2): return RMISSD
+    if not QC(p) or not QC(t) or not QC(p2): return RMISSD
     thta = theta(p, t, 1000.)
     thm = thta - wobf(thta) + wobf(t)
     return satlift(p2, thm)
@@ -144,7 +143,7 @@ def wobf(t):
         Correction to thta for calculation of saturated potential
         temperature
     '''
-    if not qc(t): return RMISSD
+    if not QC(t): return RMISSD
     x = t - 20.
     if x <= 0:
         pol = 1 + x * (-8.841660499999999e-3 + x * ( 1.4714143e-4
@@ -173,7 +172,7 @@ def satlift(p, thm):
     -------
         Temperature (C [float]) of saturated parcel at new level
     '''
-    if not qc(p) or not qc(thm): return RMISSD
+    if not QC(p) or not QC(thm): return RMISSD
     if math.fabs(p - 1000.) - 0.001 <= 0: return thm
     eor = 999
     while math.fabs(eor) - 0.1 > 0:
@@ -207,7 +206,7 @@ def temp_at_mixrat(w, p):
     -------
         Temperature (C [float]) of air at given mixing ratio and pressure
     '''
-    if not qc(w) or not qc(p): return RMISSD
+    if not QC(w) or not QC(p): return RMISSD
     c1 = 0.0498646455
     c2 = 2.4082965
     c3 = 7.07475
@@ -231,7 +230,7 @@ def mixratio(p, t):
     -------
         Mixing Ratio (g/kg) of the given parcel
     '''
-    if not qc(p) or not qc(t): return RMISSD
+    if not QC(p) or not QC(t): return RMISSD
     x = 0.02 * (t - 12.5 + (7500. / p))
     wfw = 1. + (0.0000045 * p) + (0.0014 * x * x)
     fwesw = wfw * vappres(t)
@@ -250,7 +249,7 @@ def vappres(t):
     -------
         Vapor Pressure of dry air
     '''
-    if not qc(t): RMISSD
+    if not QC(t): RMISSD
     pol = t * (1.1112018e-17 + (t * -3.0994571e-20))
     pol = t * (2.1874425e-13 + (t * (-1.789232e-15 + pol)))
     pol = t * (4.3884180e-09 + (t * (-2.988388e-11 + pol)))
@@ -273,7 +272,7 @@ def wetbulb(p, t, td):
     -------
         Wetbulb temperature (C [float])
     '''
-    if not qc(p) or not qc(t) or not qc(td): return RMISSD
+    if not QC(p) or not QC(t) or not QC(td): return RMISSD
     p2, t2 = drylift(p, t, td)
     return wetlift(p2, t2, p)
 
@@ -292,7 +291,7 @@ def thetaw(p, t, td):
     -------
         Wetbulb potential temperature (C [float])
     '''
-    if not qc(p) or not qc(t) or not qc(td): return RMISSD
+    if not QC(p) or not QC(t) or not QC(td): return RMISSD
     p2, t2 = drylift(p, t, td)
     return wetlift(p2, t2, 1000.)
 
@@ -311,7 +310,7 @@ def thetae(p, t, td):
     -------
         Equivalent potential temperature (C [float])
     '''
-    if not qc(p) or not qc(t) or not qc(td): RMISSD
+    if not QC(p) or not QC(t) or not QC(td): RMISSD
     p2, t2 = drylift(p, t, td)
     return theta(100., wetlift(p2, t2, 100.), 1000.)
 
@@ -330,8 +329,8 @@ def virtemp(p, t, td):
     -------
         Virtual temperature (C [float])
     '''
-    if not qc(td): return t
-    if not qc(p) or not qc(t): RMISSD
+    if not QC(td): return t
+    if not QC(p) or not QC(t): RMISSD
     eps = 0.62197
     tk = t + ZEROCNK
     w = 0.001 * mixratio(p, td)
@@ -362,7 +361,7 @@ def ctof(t):
     -------
         Temperature (F [float])
     '''
-    if (not qc(t)): return RMISSD
+    if (not QC(t)): return RMISSD
     return ((1.8 * t) + 32.0)
 
 
