@@ -2,7 +2,6 @@
 import math
 from sharppy.sharptab import winds
 from sharppy.sharptab import thermo
-from sharppy.sharptab.qc import qc
 from sharppy.sharptab.constants import *
 
 
@@ -133,7 +132,7 @@ def interp_from_hght(h, profile, ind):
     tptr = -1
     bptr = 0
     for i in range(profile.gNumLevels):
-        if not qc(profile.gSndg[i][ind]): continue
+        if not QC(profile.gSndg[i][ind]): continue
         if profile.gSndg[i][1] < h:
             bptr = i
         elif profile.gSndg[i][1] == h:
@@ -164,7 +163,7 @@ def interp_from_pres(p, profile, ind):
     tptr = -1
     bptr = 0
     for i in range(profile.gNumLevels):
-        if not qc(profile.gSndg[i][ind]): continue
+        if not QC(profile.gSndg[i][ind]): continue
         if profile.gSndg[i][0] > p:
             bptr = i
         elif profile.gSndg[i][0] == p:
@@ -190,7 +189,7 @@ def agl(h, profile):
     -------
         Converted height
     '''
-    if not qc(h): return RMISSD
+    if not QC(h): return RMISSD
     return h - profile.gSndg[profile.sfc][1]
 
 
@@ -207,8 +206,7 @@ def msl(h, profile):
     -------
         Converted height
     '''
-    if not qc(h): return RMISSD
+    if not QC(h): return RMISSD
     return h + profile.gSndg[profile.sfc][1]
-
 
 
