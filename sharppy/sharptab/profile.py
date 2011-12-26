@@ -1,7 +1,5 @@
-'''
-Create a Profile Object
-'''
-from sharppy.sharptab import winds
+''' Create a Profile Object '''
+from sharppy.sharptab import interp, vector
 from sharppy.sharptab.constants import *
 
 
@@ -63,5 +61,5 @@ class Profile(object):
 
     def dir2Comp(self):
         for i in range(self.gNumLevels):
-            self.gSndg[i][4], self.gSndg[i][5] = winds.vec2comp(
+            self.gSndg[i][4], self.gSndg[i][5] = vector.vec2comp(
                 self.gSndg[i][4], self.gSndg[i][5])
