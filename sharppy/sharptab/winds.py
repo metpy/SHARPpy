@@ -21,8 +21,8 @@ def vec2comp(dir, spd):
         v       (float)         V-component
     '''
     if not QC(dir) or not QC(spd): return RMISSD, RMISSD
-    u = spd * math.sin(math.radians(dir)) * -1
-    v = spd * math.cos(math.radians(dir)) * -1
+    u = spd * math.sin(math.radians(dir % 360.)) * -1
+    v = spd * math.cos(math.radians(dir % 360.)) * -1
     return u, v
 
 
@@ -42,6 +42,7 @@ def comp2vec(u, v):
     '''
     if not QC(u) or not QC(v): return RMISSD, RMISSD
     dir =  math.degrees(math.atan2(-u, -v))
+    if dir < 0: dir += 360
     spd = mag(u, v)
     return dir, spd
 
