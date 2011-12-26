@@ -31,6 +31,7 @@ class Profile(object):
             self.gStation = snfile[ttl][0:6]
             self.gDate = snfile[ttl][7:]
             self.gNumLevels = end-bgn+1
+            self.dir2Comp()
         else:
             pres = kwargs.get('pres')
             hght = kwargs.get('hght')
@@ -61,4 +62,6 @@ class Profile(object):
 
 
     def dir2Comp(self):
-        pass
+        for i in range(self.gNumLevels):
+            self.gSndg[i][4], self.gSndg[i][5] = winds.vec2comp(
+                self.gSndg[i][4], self.gSndg[i][5])
