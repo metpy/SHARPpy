@@ -1,6 +1,6 @@
 ''' Interpolation Routines '''
 import math
-from sharppy.sharptab import winds
+from sharppy.sharptab import vector
 from sharppy.sharptab import thermo
 from sharppy.sharptab.constants import *
 
@@ -95,7 +95,7 @@ def i_vtmp(p, profile):
 
 def i_vec(p, U, V):
     '''
-    Interpolates the given wind component data to a given pressure level
+    Interpolates the given component data to a given pressure level
     and returns the interpolated direction and speed
 
     Inputs
@@ -111,7 +111,7 @@ def i_vec(p, U, V):
     '''
     u = interp_from_pres(p, U)
     v = interp_from_pres(p, V)
-    return winds.comp2vec(u, v)
+    return vector.comp2vec(u, v)
 
 
 
@@ -148,7 +148,7 @@ def interp_from_hght(h, profile, ind):
 
 def interp_from_pres(p, profile, ind):
     '''
-    General interpolation routine for height coordinates
+    General interpolation routine for pressure coordinates
 
     Inputs
     ------
