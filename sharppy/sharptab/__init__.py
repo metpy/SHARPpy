@@ -1,10 +1,11 @@
 import constants
-import thermo
-import profile
-import winds
 import interp
+import vector
+import profile
+import thermo
+import winds
 import parcel
 import params
 
-__all__ = ['constants', 'thermo', 'profile', 'winds', 'interp', 'parcel',
-           'params']
+__all__ = ['constants', 'thermo', 'profile', 'vector', 'winds', 'interp',
+           'parcel', 'params']
