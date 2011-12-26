@@ -3,6 +3,8 @@ import thermo
 import profile
 import winds
 import interp
-import qc
+import parcel
+import params
 
-__all__ = ['constants', 'thermo', 'profile', 'winds', 'interp', 'qc']
+__all__ = ['constants', 'thermo', 'profile', 'winds', 'interp', 'parcel',
+           'params']
