@@ -1,7 +1,7 @@
 '''
 Create a Profile Object
 '''
-from sharppy.sharptab.qc import qc
+from sharppy.sharptab import winds
 from sharppy.sharptab.constants import *
 
 
@@ -55,6 +55,10 @@ class Profile(object):
     def get_sfc(self):
         if (self.gNumLevels < 3): return 0
         for i in range(0, self.gNumLevels):
-            if (qc(self.gSndg[i][2])): return i
+            if (QC(self.gSndg[i][2])): return i
 
         return 0
+
+
+    def dir2Comp(self):
+        pass
