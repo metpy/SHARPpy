@@ -1,64 +1,46 @@
-''' Wind and Vector Manipulation Routines '''
+''' Wind Manipulation Routines '''
 import math
-from sharppy.sharptab.qc import qc
+from sharppy.sharptab import interp
 from sharppy.sharptab.constants import *
 
-__all__ = ['vec2comp', 'comp2vec', 'mag']
+__all__ = ['mean_wind']
 
 
-def vec2comp(dir, spd):
+def mean_wind(pbot, ptop, profile, psteps=20):
     '''
-    Convert direction and speed into U,V components
+    Calculates a pressure-weighted mean wint through a layer. The default
+    layer is 850 to 200 hPa.
 
     Inputs
     ------
-        dir    (float)         direction (degrees)
-        spd    (float)         speed
+        pbot    (float)             Pressure of the bottom level (hPa)
+        ptop    (float)             Pressure of the top level (hPa)
+        profile (profile object)    Profile Object
+        psteps  (int)               Number of steps to loop through (int)
 
     Returns
     -------
-        u       (float)         U-component
-        v       (float)         V-component
+        mnu      (float)            U-component
+        mnv      (float)            V-component
     '''
-    if not QC(dir) or not QC(spd): return RMISSD, RMISSD
-    u = spd * math.sin(math.radians(dir % 360.)) * -1
-    v = spd * math.cos(math.radians(dir % 360.)) * -1
-    return u, v
+    if pbot == -1: lower = 850.
+    if ptop == -1: upper = 200.
+    pinc = int((pbot - ptop) / psteps)
+    if pinc < 1:
+        u1 = interp.interp_from_pres(pbot, profile, 4) * pbot
+        u2 = interp.interp_from_pres(pbot, profile, 4) * ptop
+        v1 = interp.interp_from_pres(pbot, profile, 5) * pbot
+        v2 = interp.interp_from_pres(pbot, profile, 5) * ptop
+        usum = u1 + u2
+        vsum = v1 + v2
+        wgt = pbot + ptop
+    else:
+        wgt = 0
+        usum = 0
+        vsum = 0
+        for p in range(int(pbot), int(ptop), -pinc):
+            usum += interp.interp_from_pres(p, profile, 4) * p
+            vsum += interp.interp_from_pres(p, profile, 5) * p
+            wgt += p
 
-
-def comp2vec(u, v):
-    '''
-    Convert U,V components into direction and speed
-
-    Inputs
-    ------
-        u       (float)         U-component
-        v       (float)         V-component
-
-    Returns
-    -------
-        dir    (float)         direction (degrees)
-        spd    (float)         speed
-    '''
-    if not QC(u) or not QC(v): return RMISSD, RMISSD
-    dir =  math.degrees(math.atan2(-u, -v))
-    if dir < 0: dir += 360
-    spd = mag(u, v)
-    return dir, spd
-
-
-def mag(u, v):
-    '''
-    Compute the magnitude of a vector
-
-    Inputs
-    ------
-        u       (float)         U-component
-        v       (float)         V-component
-
-    Returns
-    -------
-        Returns the magnitude of a vector (float)
-    '''
-    if not QC(u) or not QC(v): return RMISSD
-    return (u**2 + v**2)**0.5
+    return float(usum / wgt), float(vsum / wgt)
