@@ -126,7 +126,7 @@ class SkewT:
         ''' Draw the Dendritic Snow Growth Zone '''
         if profile.gNumLevels < 3: return
         for i in range(profile.gNumLevels-1):
-            if not qc(profile.gSndg[i][tind]): continue
+            if not QC(profile.gSndg[i][tind]): continue
             if profile.gSndg[i][tind] <= self.maxTdgz and \
                profile.gSndg[i][tind] >= self.minTdgz and \
                profile.gSndg[i+1][tind] <= self.maxTdgz and \
@@ -160,7 +160,7 @@ class SkewT:
             font=font)
 
         for i in range(profile.gNumLevels):
-            if qc(profile.gSndg[i][2]):
+            if QC(profile.gSndg[i][2]):
                 x1 = x2
                 y1 = y2
                 if profile.gSndg[i][0] > self.pmin:
@@ -176,7 +176,6 @@ class SkewT:
                     self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
                         width=width)
                     break
-
 
 
     def drawParcelTrace(self, p, t, td):
