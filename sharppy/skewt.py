@@ -131,16 +131,20 @@ class SkewT:
                profile.gSndg[i][tind] >= self.minTdgz and \
                profile.gSndg[i+1][tind] <= self.maxTdgz and \
                profile.gSndg[i+1][tind] >= self.minTdgz:
-                if profile.gSndg[i][tind] - profile.gSndg[i][tdind] <= 5 and \
-                   profile.gSndg[i+1][tind] - profile.gSndg[i+1][tdind] <= 5:
-                    x1 = self.temp2Pix(profile.gSndg[i][tind],
-                        profile.gSndg[i][0])
-                    y1 = self.pres2Pix(profile.gSndg[i][0])
-                    x2 = self.temp2Pix(profile.gSndg[i+1][tind],
-                        profile.gSndg[i+1][0])
-                    y2 = self.pres2Pix(profile.gSndg[i+1][0])
-                    self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
-                        width=width)
+                rh = tab.thermo.relh(profile.gSndg[i][0],
+                    profile.gSndg[i][tind], profile.gSndg[i][tdind])
+                if rh >= 75:
+                    rh2 = tab.thermo.relh(profile.gSndg[i+1][0],
+                        profile.gSndg[i+1][tind], profile.gSndg[i+1][tdind])
+                    if rh2 >= 75:
+                        x1 = self.temp2Pix(profile.gSndg[i][tind],
+                            profile.gSndg[i][0])
+                        y1 = self.pres2Pix(profile.gSndg[i][0])
+                        x2 = self.temp2Pix(profile.gSndg[i+1][tind],
+                            profile.gSndg[i+1][0])
+                        y2 = self.pres2Pix(profile.gSndg[i+1][0])
+                        self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
+                            width=width)
 
 
     def drawTrace(self, profile, ind, color, width, font):
@@ -160,7 +164,7 @@ class SkewT:
             font=font)
 
         for i in range(profile.gNumLevels):
-            if QC(profile.gSndg[i][2]):
+            if QC(profile.gSndg[i][ind]):
                 x1 = x2
                 y1 = y2
                 if profile.gSndg[i][0] > self.pmin:
