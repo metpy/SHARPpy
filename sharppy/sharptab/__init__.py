@@ -4,8 +4,8 @@ import vector
 import profile
 import thermo
 import winds
-import parcel
 import params
+import parcel
 
 __all__ = ['constants', 'thermo', 'profile', 'vector', 'winds', 'interp',
            'parcel', 'params']
