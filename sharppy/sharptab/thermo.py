@@ -378,6 +378,87 @@ def ctof(t):
     return ((1.8 * t) + 32.0)
 
 
+def ctok(t):
+    '''
+    Convert from Celsius to Kelvin
+
+    Inputs
+    ------
+        t       (float)         Temperature (C)
+
+    Returns
+    -------
+        Temperature (K [float])
+    '''
+    if (not QC(t)): return RMISSD
+    return t - ZEROCNK
+
+
+def ftoc(t):
+    '''
+    Convert from Fahrenheit to Celsius
+
+    Inputs
+    ------
+        t       (float)         Temperature (F)
+
+    Returns
+    -------
+        Temperature (C [float])
+    '''
+    if (not QC(t)): return RMISSD
+    return (t - 32) * (5. / 9.)
+
+
+def ftok(t):
+    '''
+    Convert from Fahrenheit to Kelvin
+
+    Inputs
+    ------
+        t       (float)         Temperature (F)
+
+    Returns
+    -------
+        Temperature (K [float])
+    '''
+    if (not QC(t)): return RMISSD
+    return ftoc(t) + ZEROCNK
+
+
+def ktoc(t):
+    '''
+    Convert from Kelvin to Celsius
+
+    Inputs
+    ------
+        t       (float)         Temperature (K)
+
+    Returns
+    -------
+        Temperature (C [float])
+    '''
+    if (not QC(t)): return RMISSD
+    return t - ZEROCNK
+
+
+def ktof(t):
+    '''
+    Convert from Kelvin to Celsius
+
+    Inputs
+    ------
+        t       (float)         Temperature (K)
+
+    Returns
+    -------
+        Temperature (C [float])
+    '''
+    if (not QC(t)): return RMISSD
+    return ctof(ktoc(t))
+
+
+
 
 
 
