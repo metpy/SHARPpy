@@ -10,7 +10,7 @@ __all__ = ['i_pres', 'i_hght', 'i_temp', 'i_dwpt', 'i_vec', 'i_vtmp',
            'interp_from_pres', 'interp_from_hght', 'agl', 'msl']
 
 
-def i_pres(h, profile):
+def pres(h, profile):
     '''
     Interpolates the given data to calculate a pressure at a given height
 
@@ -26,7 +26,7 @@ def i_pres(h, profile):
     return interp_from_hght(h, profile, 0)
 
 
-def i_hght(p, profile):
+def hght(p, profile):
     '''
     Interpolates the given data to calculate a height at a given pressure
 
@@ -42,7 +42,7 @@ def i_hght(p, profile):
     return interp_from_pres(p, profile, 1)
 
 
-def i_temp(p, profile):
+def temp(p, profile):
     '''
     Interpolates the given data to calculate a temperature at a given pressure
 
@@ -58,7 +58,7 @@ def i_temp(p, profile):
     return interp_from_pres(p, profile, 2)
 
 
-def i_dwpt(p, profile):
+def dwpt(p, profile):
     '''
     Interpolates the given data to calculate a dew point at a given pressure
 
@@ -74,7 +74,7 @@ def i_dwpt(p, profile):
     return interp_from_pres(p, profile, 3)
 
 
-def i_vtmp(p, profile):
+def vtmp(p, profile):
     '''
     Interpolates the given data to calculate a virtual temperature at a
     given pressure
@@ -88,12 +88,31 @@ def i_vtmp(p, profile):
     -------
         Virtual temperature (C) at the given pressure
     '''
-    t = interp_from_pres(p, profile, 2)
-    td = interp_from_pres(p, profile, 3)
+    t = temp(p, profile)
+    td = dwpt(p, profile)
     return virtemp(p, t, td)
 
 
-def i_vec(p, U, V):
+def components(p, profile):
+    '''
+    Interpolates the given data to calculate the U and V components at a
+    given pressure
+
+    Inputs
+    ------
+        p           (float)                 Pressure (hPa) of a level
+        profile     (profile object)        Profile object
+
+    Returns
+    -------
+        U/V components at the given pressure
+    '''
+    U = interp_from_pres(p, profile, 4)
+    V = interp_from_pres(p, profile, 5)
+    return U, V
+
+
+def vec(p, U, V):
     '''
     Interpolates the given component data to a given pressure level
     and returns the interpolated direction and speed

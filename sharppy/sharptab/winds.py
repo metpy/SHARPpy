@@ -31,10 +31,12 @@ def mean_wind(pbot, ptop, profile, psteps=20, stu=0, stv=0):
     if ptop == -1: upper = 200.
     pinc = int((pbot - ptop) / psteps)
     if psteps < 1:
-        u1 = (interp.interp_from_pres(pbot, profile, 4) - stu) * pbot
-        u2 = (interp.interp_from_pres(ptop, profile, 4)-stu) * ptop
-        v1 = (interp.interp_from_pres(pbot, profile, 5)-stv) * pbot
-        v2 = (interp.interp_from_pres(ptop, profile, 5)-stv) * ptop
+        u1, v1 = interp.components(pbot, profile)
+        u2, v2 = interp.components(ptop, profile)
+        u1 = (u1 - stu) * pbot
+        v1 = (v1 - stv) * pbot
+        u2 = (u2 - stu) * ptop
+        v2 = (v2 - stv) * ptop
         usum = u1 + u2
         vsum = v1 + v2
         wgt = pbot + ptop
@@ -43,8 +45,9 @@ def mean_wind(pbot, ptop, profile, psteps=20, stu=0, stv=0):
         usum = 0
         vsum = 0
         for p in range(int(pbot), int(ptop), -pinc):
-            usum += (interp.interp_from_pres(p, profile, 4) - stu) * p
-            vsum += (interp.interp_from_pres(p, profile, 5) - stv) * p
+            utmp, vtmp = interp.components(p, profile)
+            usum += (utmp - stu) * p
+            vsum += (vtmp - stv) * p
             wgt += p
 
     return float(usum / wgt), float(vsum / wgt)
@@ -73,10 +76,12 @@ def mean_wind_npw(pbot, ptop, profile, psteps=20, stu=0, stv=0):
     if ptop == -1: upper = 200.
     pinc = int((pbot - ptop) / psteps)
     if pinc < 1:
-        u1 = (interp.interp_from_pres(pbot, profile, 4) - stu) * pbot
-        u2 = (interp.interp_from_pres(pbot, profile, 4) - stu) * ptop
-        v1 = (interp.interp_from_pres(pbot, profile, 5) - stv) * pbot
-        v2 = (interp.interp_from_pres(pbot, profile, 5) - stv) * ptop
+        u1, v1 = interp.components(pbot, profile)
+        u2, v2 = interp.components(ptop, profile)
+        u1 = (u1 - stu) * pbot
+        v1 = (v1 - stv) * pbot
+        u2 = (u2 - stu) * ptop
+        v2 = (v2 - stv) * ptop
         usum = u1 + u2
         vsum = v1 + v2
         wgt = 2
@@ -85,8 +90,9 @@ def mean_wind_npw(pbot, ptop, profile, psteps=20, stu=0, stv=0):
         usum = 0
         vsum = 0
         for p in range(int(pbot), int(ptop), -pinc):
-            usum += (interp.interp_from_pres(p, profile, 4) - stu)
-            vsum += (interp.interp_from_pres(p, profile, 5) - stv)
+            utmp, vtmp = interp.components(p, profile)
+            usum += (utmp - stu)
+            vsum += (vtmp - stv)
             wgt += 1
 
     return float(usum / wgt), float(vsum / wgt)
@@ -153,11 +159,9 @@ def wind_shear(pbot, ptop, profile):
         shu      (float)            U-component
         shv      (float)            V-component
     '''
-    ubot = interp.interp_from_pres(pbot, profile, 4)
-    utop = interp.interp_from_pres(ptop, profile, 4)
+    ubot, vbot = interp.components(pbot, profile)
+    utop, vtop = interp.components(ptop, profile)
     shu = utop - ubot
-    vbot = interp.interp_from_pres(pbot, profile, 5)
-    vtop = interp.interp_from_pres(ptop, profile, 5)
     shv = vtop - vbot
     return shu, shv
 
@@ -184,8 +188,8 @@ def helicity(lower, upper, profile, stu=0, stv=0):
     '''
     lower = interp.msl(lower, profile)
     upper = interp.msl(upper, profile)
-    plower = interp.interp_from_hght(lower, profile, 0)
-    pupper = interp.interp_from_hght(upper, profile, 0)
+    plower = interp.pres(lower, profile)
+    pupper = interp.pres(upper, profile)
     phel = 0
     nhel = 0
 
@@ -197,15 +201,17 @@ def helicity(lower, upper, profile, stu=0, stv=0):
     uptr = i
 
     # Integrate from interpolated bottom level to iptr level
-    sru1 = KTS2MS(interp.interp_from_pres(plower, profile, 4) - stu)
-    srv1 = KTS2MS(interp.interp_from_pres(plower, profile, 5) - stv)
+    sru1, srv1 = interp.components(plower, profile)
+    sru1 = KTS2MS(sru1 - stu)
+    srv1 = KTS2MS(srv1 - stv)
 
     # Loop through levels
     for i in range(lptr, uptr+1):
         lyrh = 0
         if QC(profile.gSndg[i][4]) and QC(profile.gSndg[i][5]):
-            sru2 = KTS2MS(profile.gSndg[i][4] - stu)
-            srv2 = KTS2MS(profile.gSndg[i][5] - stv)
+            sru2, srv2 = interp.components(profile.gSndg[i][0], profile)
+            sru2 = KTS2MS(sru2 - stu)
+            srv2 = KTS2MS(srv2 - stv)
 
             lyrh = (sru2 * srv1) - (sru1 * srv2)
             if lyrh > 0: phel += lyrh
@@ -214,8 +220,9 @@ def helicity(lower, upper, profile, stu=0, stv=0):
             srv1 = srv2
 
     # Integrate from tptr level to interpolated top level
-    sru2 = KTS2MS(interp.interp_from_pres(pupper, profile, 4) - stu)
-    srv2 = KTS2MS(interp.interp_from_pres(pupper, profile, 5) - stv)
+    sru2, srv2 = interp.components(pupper, profile)
+    sru2 = KTS2MS(sru2 - stu)
+    srv2 = KTS2MS(srv2 - stv)
 
     lyrh = (sru2 * srv1) - (sru1 * srv2)
     if lyrh > 0: phel += lyrh
@@ -253,8 +260,7 @@ def max_wind(lower, upper, profile):
     uptr = i
 
     # Start with interpolated bottom level
-    maxu = interp.interp_from_pres(lower, profile, 4)
-    maxv = interp.interp_from_pres(lower, profile, 5)
+    maxu, maxv = interp.components(lower, profile)
     maxspd = vector.comp2vec(maxu, maxv)[1]
     p = lower
 
@@ -270,8 +276,7 @@ def max_wind(lower, upper, profile):
                 p = profile.gSndg[i][0]
 
     # Finish with interpolated top level
-    tmpu = interp.interp_from_pres(upper, profile, 4)
-    tmpv = interp.interp_from_pres(upper, profile, 5)
+    tmpu, tmpv = interp.components(upper, profile)
     tmpspd = vector.comp2vec(tmpu, tmpv)[1]
     if tmpspd > maxspd:
         maxu = tmpu
@@ -301,7 +306,7 @@ def corfidi_mcs_motion(profile):
     mnu1, mnv1 = mean_wind_npw(850., 300., profile)
 
     # Compute the low-level (SFC-1500m) mean wind
-    p_1p5km = interp.interp_from_hght(interp.msl(1500., profile), profile, 0)
+    p_1p5km = interp.pres(interp.msl(1500., profile), profile)
     mnu2, mnv2 = mean_wind_npw(profile.gSndg[profile.sfc][0], p_1p5km, profile)
 
     # Compute the upshear vector
@@ -330,7 +335,7 @@ def bunkers_right_mover(profile):
     '''
     d = 7.5     # Deviation value emperically derived as 7.5 m/s
     msl6km = interp.msl(6000., profile)
-    p6km = interp.interp_from_hght(msl6km, profile, 0)
+    p6km = interp.pres(msl6km, profile)
 
     # SFC-6km Mean Wind
     mnu6, mnv6 = mean_wind_npw(profile.gSndg[profile.sfc][0],
@@ -363,7 +368,7 @@ def bunkers_left_mover(profile):
     '''
     d = MS2KTS(7.5)     # Deviation value emperically derived as 7.5 m/s
     msl6km = interp.msl(6000., profile)
-    p6km = interp.interp_from_hght(msl6km, profile, 0)
+    p6km = interp.pres(msl6km, profile)
 
     # SFC-6km Mean Wind
     mnu6, mnv6 = mean_wind_npw(profile.gSndg[profile.sfc][0],
