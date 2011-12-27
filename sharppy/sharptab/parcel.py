@@ -79,7 +79,7 @@ class DefineParcel(object):
 class Parcel(object):
     ''' Initialize variables for a parcel '''
 
-    def __init__(self, lower, upper, lplvals, missing=RMISSD.):
+    def __init__(self, lower, upper, lplvals, missing=RMISSD):
         self.lplvals = lplvals
         self.pres = lplvals.pres
         self.temp = lplvals.temp
