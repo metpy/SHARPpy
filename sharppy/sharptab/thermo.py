@@ -345,8 +345,21 @@ def effective_inflow_layer():
     pass
 
 
-def relh():
-    pass
+def relh(p, t, td):
+    '''
+    Calculate the relative-humidity at a specified pressure level.
+
+    Inputs
+    ------
+        p       (float)         Pressure of parcel (hPa)
+        t       (float)         Temperature of parcel (C)
+        td      (float)         Dew Point of parcel (C)
+
+    Returns
+    -------
+        Relative Humidity (%) of parcel
+    '''
+    return 100. * mixratio(p, td) / mixratio(p, t)
 
 
 def ctof(t):
