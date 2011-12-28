@@ -391,7 +391,7 @@ def ctok(t):
         Temperature (K [float])
     '''
     if (not QC(t)): return RMISSD
-    return t - ZEROCNK
+    return t + ZEROCNK
 
 
 def ftoc(t):
