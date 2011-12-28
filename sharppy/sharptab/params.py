@@ -515,8 +515,8 @@ def parcel(lower, upper, lplvals, profile):
     # Calculate BRN if available
     pcl = bulk_rich(pcl, profile)
 
-    pcl.bminus = cinh_old
-    if pcl.bplus == 0: pcl.bminus = 0.
+    # pcl.bminus = cinh_old
+    # if pcl.bplus == 0: pcl.bminus = 0.
     return pcl
 
 
