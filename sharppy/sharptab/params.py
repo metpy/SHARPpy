@@ -459,6 +459,10 @@ def parcel(lower, upper, lplvals, profile):
             if cap_strength < 0.: cap_strength = 0.
             pcl.cap = cap_strength
             pcl.cappres = cap_strengthpres
+            # Hack to force LFC to be at least at the LCL
+            if pcl.lfcpres > pcl.lclpres:
+                pcl.lfcpres = pcl.lclpres
+                pcl.lfchght = pcl.lclhght
 
         # EL Possibility
         if lyre <=0. and lyrlast >= 0.:
