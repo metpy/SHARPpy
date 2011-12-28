@@ -90,7 +90,7 @@ def vtmp(p, profile):
     '''
     t = temp(p, profile)
     td = dwpt(p, profile)
-    return virtemp(p, t, td)
+    return thermo.virtemp(p, t, td)
 
 
 def components(p, profile):
