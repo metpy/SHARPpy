@@ -1,7 +1,7 @@
 ''' Frequently used constants '''
 
 consts = ["RMISSD", "ROCP", "ZEROCNK", "G"]
-funcs = ['MS2KTS', 'KTS2MS', 'QC']
+funcs = ['MS2KTS', 'KTS2MS', 'M2FT', 'FT2M', 'QC']
 __all__ = consts + funcs
 
 
@@ -42,6 +42,36 @@ def KTS2MS(val):
         Val converted to meters per second (float)
     '''
     return val / 1.94384449
+
+
+def M2FT(val):
+    '''
+    Convert meters to feet
+
+    Inputs
+    ------
+        val     (float)         Distance (m)
+
+    Returns
+    -------
+        Val converted to feet (float)
+    '''
+    return val * 3.2808399
+
+
+def FT2M(val):
+    '''
+    Convert feet to meters
+
+    Inputs
+    ------
+        val     (float)         Distance (ft)
+
+    Returns
+    -------
+        Val converted to meters (float)
+    '''
+    return val / 3.2808399
 
 
 def QC(val):
