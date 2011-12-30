@@ -2,7 +2,6 @@ from Tkinter import Canvas
 import tkFont
 import math
 import sharppy.sharptab as tab
-from sharppy.sharptab.qc import qc
 from sharppy.sharptab.constants import *
 
 
