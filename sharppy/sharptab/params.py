@@ -33,7 +33,7 @@ class DefineParcel(object):
             self.__sfc(prof)
         elif flag == 2:
             self.presval = kwargs.get('pres', 100)
-            self.__fcst(pro)
+            self.__fcst(prof)
         elif flag == 3:
             self.presval = kwargs.get('pres', 300)
             self.__mu(prof)
@@ -50,6 +50,7 @@ class DefineParcel(object):
             print 'Defaulting to Surface Parcel'
             self.presval = kwargs.get('pres', prof.gSndg[prof.sfc])
             self.__sfc()
+        return
 
     def __sfc(self, prof):
         ''' Create a parcel using surface conditions '''
@@ -57,6 +58,7 @@ class DefineParcel(object):
         self.temp = prof.gSndg[prof.sfc][prof.tind]
         self.dwpt = prof.gSndg[prof.sfc][prof.tdind]
         self.pres = prof.gSndg[prof.sfc][prof.pind]
+        return
 
     def __fcst(self, prof):
         ''' Create a parcel using forecast conditions '''
@@ -65,6 +67,7 @@ class DefineParcel(object):
         mmr = mean_mixratio(prof, -1, -1)
         self.dwpt = thermo.temp_at_mixrat(mmr, prof.gSndg[prof.sfc][prof.pind])
         self.pres = prof.gSndg[prof.sfc][prof.pind]
+        return
 
     def __mu(self, prof):
         ''' Create the most unstable parcel within defined level '''
@@ -73,6 +76,7 @@ class DefineParcel(object):
         self.pres = unstable_level(prof, -1, diff)
         self.temp = interp.temp(self.pres, prof)
         self.dwpt = interp.dwpt(self.pres, prof)
+        return
 
     def __ml(self, prof):
         ''' Create the mixed-layer parcel; mixing over defined pressure '''
@@ -83,6 +87,7 @@ class DefineParcel(object):
         mmr = mean_mixratio(prof, -1, diff)
         self.temp = thermo.theta(1000., mtha, self.pres)
         self.dwpt = thermo.temp_at_mixrat(mmr, self.pres)
+        return
 
     def __user(self, prof):
         ''' Create a user-defined parcel '''
@@ -90,6 +95,7 @@ class DefineParcel(object):
         self.pres = self.presval
         self.temp = interp.temp(self.pres, prof)
         self.dwpt = interp.dwpt(self.pres, prof)
+        return
 
     def __effective(self, prof):
         ''' Create the mean-effective layer parcel '''
@@ -108,6 +114,7 @@ class DefineParcel(object):
             self.pres = prof.gSndg[prof.sfc][prof.pind]
             self.temp = prof.gSndg[prof.sfc][prof.tind]
             self.dwpt = prof.gSndg[prof.sfc][prof.tdind]
+        return
 
 
 class Parcel(object):
@@ -132,6 +139,8 @@ class Parcel(object):
         self.bfzl = RMISSD
         self.b3km = RMISSD
         self.b6km = RMISSD
+        self.hght10c = RMISSD
+        self.hght30c = RMISSD
         self.wm10c = RMISSD
         self.wm30c = RMISSD
         self.li5 = RMISSD
@@ -142,6 +151,7 @@ class Parcel(object):
         self.limaxpres = RMISSD
         self.cap = RMISSD
         self.cappres = RMISSD
+        return
 
 
 def k_index(prof):
@@ -323,7 +333,7 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
     pe1 = lower
     h1 = interp.hght(pe1, prof)
     tp1 = thermo.virtemp(pres, temp, dwpt)
-    te1 = tp1
+    # te1 = tp1
 
     # Lift parcel and return LCL pres (hPa) and LCL temp (c)
     pe2, tp2 = thermo.drylift(pres, temp, dwpt)
@@ -350,8 +360,7 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
     for pp in range(a, b, int(pinc)):
         pp1 = pp
         pp2 = pp + pinc
-        if pp2 < blupper:
-            pp2 = blupper
+        if pp2 < blupper: pp2 = blupper
         dz = interp.hght(pp2, prof) - interp.hght(pp1, prof)
 
         # Calculate difference between Tv_parcel and Tv_environment at top
@@ -360,24 +369,30 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
         tv_env_bot = thermo.virtemp(pp1, thermo.theta(pp1,
             interp.temp(pp1, prof), 1000.), interp.dwpt(pp1, prof))
         tdef1 = (thermo.virtemp(pp1, theta_parcel,
-            thermo.temp_at_mixrat(blmr, pp1))) / (thermo.ctok(tv_env_bot))
+            thermo.temp_at_mixrat(blmr, pp1)) - tv_env_bot) / \
+            (thermo.ctok(tv_env_bot))
+
         tv_env_top = thermo.virtemp(pp2, thermo.theta(pp2,
             interp.temp(pp2, prof), 1000.), interp.dwpt(pp2, prof))
         tdef2 = (thermo.virtemp(pp2, theta_parcel,
-            thermo.temp_at_mixrat(blmr, pp2))) / (thermo.ctok(tv_env_bot))
+            thermo.temp_at_mixrat(blmr, pp2)) - tv_env_top) / \
+            (thermo.ctok(tv_env_bot))
+
         lyre = G * (tdef1 + tdef2) / 2. * dz
-        if lyre < 0:
-            totn += lyre
+        if lyre < 0: totn += lyre
 
     # Move the bottom layer to the top of the boundary layer
     if lower > pe2:
-        pcl.blayer = pe2
+        lower = pe2
+        pcl.blayer = lower
 
     # Calculate height of various temperature levels
     p10c = temp_lvl(-10., prof)
     p30c = temp_lvl(-30., prof)
     hgt10c = interp.hght(p10c, prof)
     hgt30c = interp.hght(p30c, prof)
+    pcl.hght10c = hgt10c
+    pcl.hght30c = hgt30c
 
     # Find lowest observation in layer
     i = 0
@@ -402,6 +417,9 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
 
     # START WITH INTERPOLATED BOTTOM LAYER
     # Begin moist ascent from lifted parcel LCL (pe2, tp2)
+    pe1 = lower
+    h1 = interp.hght(pe1, prof)
+    te1 = interp.vtmp(pe1, prof)
     tp1 = thermo.wetlift(pe2, tp2, pe1)
     lyre = 0
     lyrlast = 0
@@ -417,8 +435,7 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
         lyre = G * (tdef1 + tdef2) / 2. * (h2 - h1)
 
         # Add layer energy to total positive if lyre > 0
-        if lyre > 0:
-            totp += lyre
+        if lyre > 0: totp += lyre
         # Add layer energy to total negative if lyre < 0, only up to EL
         else:
             if pe2 > 500.: totn += lyre
@@ -464,11 +481,9 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
             tdef3 = (thermo.virtemp(pe3, tp3, tp3) - te3) / thermo.ctok(te3)
             tdef2 = (thermo.virtemp(pe2, tp2, tp2) - te2) / thermo.ctok(te2)
             lyrf = G * (tdef3 + tdef2) / 2. * (h2 - h3)
-            if lyrf > 0:
-                pcl.bplus += lyrf
+            if lyrf > 0: pcl.bplus += lyrf
             else:
                 if pe2 > 500.: pcl.bminus += lyrf
-
             if pcl.bplus == 0: pcl.bminus = 0.
 
         # Is this the freezing level
@@ -537,7 +552,7 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
         # Is this the 3km level
         if pcl.lclhght < 3000.:
             h = interp.agl(interp.hght(pe2, prof), prof)
-            if h >= 3000. and not QC(pcl.b3km):
+            if h >= 2000. and not QC(pcl.b3km):
                 pe3 = pelast
                 h3 = interp.hght(pe3, prof)
                 te3 = interp.vtmp(pe3, prof)
@@ -556,12 +571,12 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
                         thermo.ctok(te2)
                     lyrf = G * (tdef3 + tdef2) / 2. * (h2 - h3)
                     if lyrf > 0: pcl.b3km += lyrf
-            else: pcl.b3km = 0.
+        else: pcl.b3km = 0.
 
         # Is this the 6km level
         if pcl.lclhght < 6000.:
             h = interp.agl(interp.hght(pe2, prof), prof)
-            if h >= 6000. and not QC(pcl.b6km):
+            if h >= 5000. and not QC(pcl.b6km):
                 pe3 = pelast
                 h3 = interp.hght(pe3, prof)
                 te3 = interp.vtmp(pe3, prof)
@@ -580,7 +595,7 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
                         thermo.ctok(te2)
                     lyrf = G * (tdef3 + tdef2) / 2. * (h2 - h3)
                     if lyrf > 0: pcl.b6km += lyrf
-            else: pcl.b6km = 0.
+        else: pcl.b6km = 0.
 
         # LFC Possibility
         if lyre >= 0. and lyrlast <= 0.:
@@ -596,6 +611,7 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
             cinh_old = totn
             tote = 0.
             pcl.elpres = RMISSD
+            li_max = RMISSD
 
             if cap_strength < 0.: cap_strength = 0.
             pcl.cap = cap_strength
@@ -606,7 +622,7 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
                 pcl.lfchght = pcl.lclhght
 
         # EL Possibility
-        if lyre <=0. and lyrlast >= 0.:
+        if lyre <= 0. and lyrlast >= 0.:
             tp3 = tp1
             te3 = te1
             pe2 = pe1
@@ -660,8 +676,8 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
     # Calculate BRN if available
     pcl = bulk_rich(pcl, flag, prof)
 
-    # pcl.bminus = cinh_old
-    # if pcl.bplus == 0: pcl.bminus = 0.
+    pcl.bminus = cinh_old
+    if pcl.bplus == 0: pcl.bminus = 0.
     return pcl
 
 
