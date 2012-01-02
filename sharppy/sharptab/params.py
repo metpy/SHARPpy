@@ -6,7 +6,7 @@ from sharppy.sharptab.constants import *
 __all__ = ['DefineParcel', 'Parcel', 'k_index', 't_totals', 'c_totals', 'v_totals',
            'precip_water', 'parcel', 'temp_lvl', 'bulk_rich', 'max_temp',
            'mean_mixratio', 'mean_theta', 'unstable_level',
-           'effective_inflow_layer_thermo']
+           'effective_inflow_layer']
 
 
 class DefineParcel(object):
@@ -94,7 +94,7 @@ class DefineParcel(object):
 
     def __effective(self, profile):
         ''' Create the mean-effective layer parcel '''
-        pbot, ptop = effective_inflow_layer_thermo(100, -250,
+        pbot, ptop = effective_inflow_layer(100, -250,
             profile, self.flag)
         if pbot > 0:
             self.desc = '%.2f hPa Mean Effective Layer' % (pbot-ptop)
@@ -954,7 +954,7 @@ def unstable_level(profile, lower, upper):
     return pmax
 
 
-def effective_inflow_layer_thermo(ecape, ecinh, profile, flag):
+def effective_inflow_layer(ecape, ecinh, profile, flag):
     '''
     Calculates the top and bottom of the effective inflow layer based on
     research by Thompson et al. (2004)
@@ -970,7 +970,7 @@ def effective_inflow_layer_thermo(ecape, ecinh, profile, flag):
         pbot        (float)                 Pressure at bottom level (hPa)
         ptop        (float)                 Pressure at top level (hPa)
     '''
-    mulplvals = DefineParcel(profile, 3)
+    mulplvals = DefineParcel(profile, 3, pres=400)
     mupcl = parcelx(-1, -1, mulplvals.pres, mulplvals.temp, mulplvals.dwpt,
         mulplvals.flag, profile)
     mucape = mupcl.bplus
