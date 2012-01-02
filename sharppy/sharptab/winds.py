@@ -30,7 +30,7 @@ def mean_wind(pbot, ptop, profile, psteps=20, stu=0, stv=0):
     if pbot == -1: lower = 850.
     if ptop == -1: upper = 200.
     pinc = int((pbot - ptop) / psteps)
-    if psteps < 1:
+    if pinc < 1:
         u1, v1 = interp.components(pbot, profile)
         u2, v2 = interp.components(ptop, profile)
         u1 = (u1 - stu) * pbot
