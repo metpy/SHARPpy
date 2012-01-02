@@ -6,7 +6,7 @@ from sharppy.sharptab.constants import *
 __all__ = ['DefineParcel', 'Parcel', 'k_index', 't_totals', 'c_totals',
            'v_totals', 'precip_water', 'parcel', 'temp_lvl', 'bulk_rich',
            'max_temp', 'mean_mixratio', 'mean_theta', 'unstable_level',
-           'effective_inflow_layer', 'bunkers_storm_motion']
+           'effective_inflow_layer', 'bunkers_storm_motion', 'convective_temp']
 
 
 class DefineParcel(object):
@@ -169,8 +169,8 @@ def k_index(prof):
     t8 = interp.temp(850., prof)
     t7 = interp.temp(700., prof)
     t5 = interp.temp(500., prof)
-    td8 = interp.dwpt(850., prof)
     td7 = interp.dwpt(700., prof)
+    td8 = interp.dwpt(850., prof)
     if not QC(t8) or not QC(t7) or not QC(t5) or not QC(td8) or not QC(td7):
         return RMISSD
     else:
@@ -1076,4 +1076,48 @@ def bunkers_storm_motion(prof, pbot=None):
         rstu, rstv, lstu, lstv =  winds.non_parcel_bunkers_motion(prof)
 
     return rstu, rstv, lstu, lstv
+
+
+def convective_temp(prof, mincinh=-1.):
+    '''
+    Computes the convective temperature, assuming no change in the moisture
+    profile. Parcels are iteratively lifted until only mincinh is left as a
+    cap. The first guess is the observed surface temperature.
+
+    Inputs
+    ------
+        prof        (profile object)    Profile Object
+        mincinh     (float)             Amount of CINH left at CI
+
+    Returns
+    -------
+        Convective Temperature (float [C])
+    '''
+    mmr = mean_mixratio(prof, -1, -1)
+    sfcpres = prof.gSndg[prof.sfc][prof.pind]
+    sfctemp = prof.gSndg[prof.sfc][prof.tind]
+    sfcdwpt = thermo.temp_at_mixrat(mmr, sfcpres)
+
+    # Do a quick search to find wheather to continue. If
+    # If you need to heat up more than 25C, don't compute.
+    pcl = parcelx(-1, -1, sfcpres, sfctemp+25., sfcdwpt, 5, prof)
+    if pcl.bplus == 0. or pcl.bminus < mincinh: return RMISSD
+
+    excess = sfcdwpt - sfctemp
+    if excess > 0: sfctemp = sfctemp + excess + 4.
+    pcl = parcelx(-1, -1, sfcpres, sfctemp, sfcdwpt, 5, prof)
+    if pcl.bplus == 0.: pcl.bminus = RMISSD
+    while pcl.bminus < mincinh:
+        if pcl.bminus < -100.: sfctemp += 2.
+        else: sfctemp += 0.5
+        pcl = parcelx(-1, -1, sfcpres, sfctemp, sfcdwpt, 5, prof)
+        if pcl.bplus == 0.: pcl.bminus = RMISSD
+
+    return sfctemp
+
+
+
+
+
+
 
