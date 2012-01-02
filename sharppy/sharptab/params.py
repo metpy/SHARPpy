@@ -876,7 +876,7 @@ def mean_theta(prof, lower=-1, upper=-1):
 
     # Find highest observations in the layer
     i = prof.gNumLevels - 1
-    while prof.gSndg[i][prof.pind] < lower: i-=1
+    while prof.gSndg[i][prof.pind] < upper: i-=1
     uptr = i
     if prof.gSndg[i][prof.pind] == upper: uptr-=1
 
