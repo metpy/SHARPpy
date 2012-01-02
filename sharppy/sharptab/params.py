@@ -35,7 +35,7 @@ class DefineParcel(object):
             self.presval = kwargs.get('pres', 100)
             self.__fcst(prof)
         elif flag == 3:
-            self.presval = kwargs.get('pres', 300)
+            self.presval = kwargs.get('pres', 400)
             self.__mu(prof)
         elif flag == 4:
             self.presval = kwargs.get('pres', 100)
@@ -922,8 +922,7 @@ def unstable_level(prof, lower, upper):
 
     # Make sure this is a valid layer
     while not QC(interp.dwpt(upper, prof)): upper += 50.
-    if not QC(interp.temp(lower, prof)):
-        lower = prof.gSndg[prof.sfc][0]
+    if not QC(interp.temp(lower, prof)): lower = prof.gSndg[prof.sfc][0]
 
     # Find lowest observations in the layer
     i = 0
@@ -934,7 +933,7 @@ def unstable_level(prof, lower, upper):
 
     # Find highest observations in the layer
     i = prof.gNumLevels - 1
-    while prof.gSndg[i][prof.pind] < lower: i-=1
+    while prof.gSndg[i][prof.pind] < upper: i-=1
     uptr = i
     if prof.gSndg[i][prof.pind] == upper: uptr-=1
 
