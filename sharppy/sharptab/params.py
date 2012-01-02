@@ -3,10 +3,10 @@ import math
 from sharppy.sharptab import interp, vector, thermo, winds
 from sharppy.sharptab.constants import *
 
-__all__ = ['DefineParcel', 'Parcel', 'k_index', 't_totals', 'c_totals', 'v_totals',
-           'precip_water', 'parcel', 'temp_lvl', 'bulk_rich', 'max_temp',
-           'mean_mixratio', 'mean_theta', 'unstable_level',
-           'effective_inflow_layer']
+__all__ = ['DefineParcel', 'Parcel', 'k_index', 't_totals', 'c_totals',
+           'v_totals', 'precip_water', 'parcel', 'temp_lvl', 'bulk_rich',
+           'max_temp', 'mean_mixratio', 'mean_theta', 'unstable_level',
+           'effective_inflow_layer', 'bunkers_storm_motion']
 
 
 class DefineParcel(object):
@@ -50,7 +50,6 @@ class DefineParcel(object):
             print 'Defaulting to Surface Parcel'
             self.presval = kwargs.get('pres', profile.gSndg[profile.sfc])
             self.__sfc()
-        print self.desc
 
     def __sfc(self, profile):
         ''' Create a parcel using surface conditions '''
@@ -97,7 +96,8 @@ class DefineParcel(object):
         pbot, ptop = effective_inflow_layer(100, -250,
             profile, self.flag)
         if pbot > 0:
-            self.desc = '%.2f hPa Mean Effective Layer' % (pbot-ptop)
+            self.desc = '%.2f hPa Mean Effective Layer Centered at %.2f' % (
+                pbot-ptop, (pbot+ptop)/2.)
             mtha = mean_theta(profile, pbot, ptop)
             mmr = mean_mixratio(profile, pbot, ptop)
             self.pres = (ptop + pbot) / 2.
@@ -976,6 +976,15 @@ def effective_inflow_layer(ecape, ecinh, profile, flag):
     mucape = mupcl.bplus
     mucinh = mupcl.bminus
 
+    # Scenario where shallow buoyancy present for
+    # parcel with lesser theta near the ground
+    mulplvals = DefineParcel(profile, 3, pres=300)
+    mupcl = parcelx(-1, -1, mulplvals.pres, mulplvals.temp, mulplvals.dwpt,
+        mulplvals.flag, profile)
+    if mupcl.bplus > mucape:
+        mucape = mupcl.bplus
+        mucinh = mupcl.bminus
+
     pbot = RMISSD
     ptop = RMISSD
 
@@ -990,16 +999,64 @@ def effective_inflow_layer(ecape, ecinh, profile, flag):
         if pbot == RMISSD: return pbot, ptop
         bptr = i
         # Keep searching upward for the effective top
-        for i in range(bptr, profile.gNumLevels-1):
+        for i in range(bptr+1, profile.gNumLevels-1):
             pcl = parcelx(-1, -1, profile.gSndg[i][0], profile.gSndg[i][2],
                 profile.gSndg[i][3], flag, profile)
             if pcl.bplus <= ecape or pcl.bminus <= ecinh:
-                ptop = profile.gSndg[i-1][0]
+                j = 1
+                while not QC(profile.gSndg[i-j][2]) and \
+                      not QC(profile.gSndg[i-j][3]): j+=1
+                ptop = profile.gSndg[i-j][0]
+                if ptop > pbot: ptop = pbot
                 break
 
     return pbot, ptop
 
 
+def bunkers_storm_motion(profile, pbot=None):
+    '''
+    Compute the Bunkers Storm Motion for a Right Moving Supercell using
+    a parcel based approach.
 
+    Inputs
+    ------
+        profile     (profile object)    Profile Object
+        pbot        (float)             Base of effective-inflow layer (hPa)
 
+    Returns
+    -------
+        rstu        (float)             Right Storm Motion U-component
+        rstv        (float)             Right Storm Motion V-component
+        lstu        (float)             Left Storm Motion U-component
+        lstv        (float)             Left Storm Motion V-component
+    '''
+    d = MS2KTS(7.5)         # Deviation value emperically derived as 7.5 m/s
+    mulplvals = DefineParcel(profile, 3, pres=400)
+    mupcl = parcelx(-1, -1, mulplvals.pres, mulplvals.temp, mulplvals.dwpt,
+        mulplvals.flag, profile)
+    mucape = mupcl.bplus
+    mucinh = mupcl.bminus
+    muel = mupcl.elhght
+
+    if not pbot:
+        pbot, ptop = effective_inflow_layer(100, -250, profile, 5)
+
+    base = interp.agl(interp.hght(pbot, profile), profile)
+    if mucape > 100. and QC(muel) and base >= 750:
+        depth = el - base
+        htop = base + depth / 2.
+        ptop = interp.pres(interp.msl(base + htop, profile), profile)
+        mnu, mnv = winds.mean_wind_npw(pbot, ptop, profile)
+        sru, srv = winds.wind_shear(pbot, ptop, profile)
+        srmag = vector.mag(srud, srvd)
+        uchg = d / srmag * srv
+        vchg = d / srmag * sru
+        rstu = mnu + uchg
+        rstv = mnv - vchg
+        lstu = mnu - uchg
+        lstv = mnv + vchg
+    else:
+        rstu, rstv, lstu, lstv =  winds.non_parcel_bunkers_motion(profile)
+
+    return rstu, rstv, lstu, lstv
 
