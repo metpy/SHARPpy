@@ -5,11 +5,10 @@ from sharppy.sharptab.constants import *
 
 __all__ = ['mean_wind', 'mean_wind_npw', 'sr_wind', 'sr_wind_npw',
            'wind_shear', 'helicity', 'max_wind', 'corfidi_mcs_motion',
-           'non_parcel_bunkers_right_mover', 'non_parcel_bunkers_left_mover',
-           'mbe_vectors']
+           'non_parcel_bunkers_motion', 'mbe_vectors']
 
 
-def mean_wind(pbot, ptop, profile, psteps=20, stu=0, stv=0):
+def mean_wind(pbot, ptop, prof, psteps=20, stu=0, stv=0):
     '''
     Calculates a pressure-weighted mean wind through a layer. The default
     layer is 850 to 200 hPa.
@@ -18,7 +17,7 @@ def mean_wind(pbot, ptop, profile, psteps=20, stu=0, stv=0):
     ------
         pbot    (float)             Pressure of the bottom level (hPa)
         ptop    (float)             Pressure of the top level (hPa)
-        profile (profile object)    Profile Object
+        prof    (profile object)    Profile Object
         psteps  (int; optional)     Number of steps to loop through (int)
         stu     (float; optional)   U-component of storm-motion vector
         stv     (float; optional)   V-component of storm-motion vector
@@ -32,8 +31,8 @@ def mean_wind(pbot, ptop, profile, psteps=20, stu=0, stv=0):
     if ptop == -1: upper = 200.
     pinc = int((pbot - ptop) / psteps)
     if pinc < 1:
-        u1, v1 = interp.components(pbot, profile)
-        u2, v2 = interp.components(ptop, profile)
+        u1, v1 = interp.components(pbot, prof)
+        u2, v2 = interp.components(ptop, prof)
         u1 = (u1 - stu) * pbot
         v1 = (v1 - stv) * pbot
         u2 = (u2 - stu) * ptop
@@ -46,7 +45,7 @@ def mean_wind(pbot, ptop, profile, psteps=20, stu=0, stv=0):
         usum = 0
         vsum = 0
         for p in range(int(pbot), int(ptop), -pinc):
-            utmp, vtmp = interp.components(p, profile)
+            utmp, vtmp = interp.components(p, prof)
             usum += (utmp - stu) * p
             vsum += (vtmp - stv) * p
             wgt += p
@@ -54,7 +53,7 @@ def mean_wind(pbot, ptop, profile, psteps=20, stu=0, stv=0):
     return float(usum / wgt), float(vsum / wgt)
 
 
-def mean_wind_npw(pbot, ptop, profile, psteps=20, stu=0, stv=0):
+def mean_wind_npw(pbot, ptop, prof, psteps=20, stu=0, stv=0):
     '''
     Calculates a pressure-weighted mean wind through a layer. The default
     layer is 850 to 200 hPa.
@@ -63,7 +62,7 @@ def mean_wind_npw(pbot, ptop, profile, psteps=20, stu=0, stv=0):
     ------
         pbot    (float)             Pressure of the bottom level (hPa)
         ptop    (float)             Pressure of the top level (hPa)
-        profile (profile object)    Profile Object
+        prof    (profile object)    Profile Object
         psteps  (int; optional)     Number of steps to loop through (int)
         stu     (float; optional)   U-component of storm-motion vector
         stv     (float; optional)   V-component of storm-motion vector
@@ -77,8 +76,8 @@ def mean_wind_npw(pbot, ptop, profile, psteps=20, stu=0, stv=0):
     if ptop == -1: upper = 200.
     pinc = int((pbot - ptop) / psteps)
     if pinc < 1:
-        u1, v1 = interp.components(pbot, profile)
-        u2, v2 = interp.components(ptop, profile)
+        u1, v1 = interp.components(pbot, prof)
+        u2, v2 = interp.components(ptop, prof)
         u1 = (u1 - stu) * pbot
         v1 = (v1 - stv) * pbot
         u2 = (u2 - stu) * ptop
@@ -91,7 +90,7 @@ def mean_wind_npw(pbot, ptop, profile, psteps=20, stu=0, stv=0):
         usum = 0
         vsum = 0
         for p in range(int(pbot), int(ptop), -pinc):
-            utmp, vtmp = interp.components(p, profile)
+            utmp, vtmp = interp.components(p, prof)
             usum += (utmp - stu)
             vsum += (vtmp - stv)
             wgt += 1
@@ -99,7 +98,7 @@ def mean_wind_npw(pbot, ptop, profile, psteps=20, stu=0, stv=0):
     return float(usum / wgt), float(vsum / wgt)
 
 
-def sr_wind(pbot, ptop, stu, stv, profile, psteps=20):
+def sr_wind(pbot, ptop, stu, stv, prof, psteps=20):
     '''
     Calculates a pressure-weighted mean storm-relative wind through a layer.
     The default layer is 850 to 200 hPa. This is a thin wrapper around
@@ -111,7 +110,7 @@ def sr_wind(pbot, ptop, stu, stv, profile, psteps=20):
         ptop    (float)             Pressure of the top level (hPa)
         stu     (float)             U-component of storm-motion vector
         stv     (float)             V-component of storm-motion vector
-        profile (profile object)    Profile Object
+        prof    (profile object)    Profile Object
         psteps  (int; optional)     Number of steps to loop through (int)
 
     Returns
@@ -119,10 +118,10 @@ def sr_wind(pbot, ptop, stu, stv, profile, psteps=20):
         mnu      (float)            U-component
         mnv      (float)            V-component
     '''
-    return mean_wind(pbot, ptop, profile, psteps, stu, stv)
+    return mean_wind(pbot, ptop, prof, psteps, stu, stv)
 
 
-def sr_wind_npw(pbot, ptop, stu, stv, profile, psteps=20):
+def sr_wind_npw(pbot, ptop, stu, stv, prof, psteps=20):
     '''
     Calculates a non-pressure-weighted storm-relative mean wind through a
     layer. The default layer is 850 to 200 hPa. This is a thin wrapper
@@ -134,7 +133,7 @@ def sr_wind_npw(pbot, ptop, stu, stv, profile, psteps=20):
         ptop    (float)             Pressure of the top level (hPa)
         stu     (float)             U-component of storm-motion vector
         stv     (float)             V-component of storm-motion vector
-        profile (profile object)    Profile Object
+        prof    (profile object)    Profile Object
         psteps  (int; optional)     Number of steps to loop through (int)
 
     Returns
@@ -142,10 +141,10 @@ def sr_wind_npw(pbot, ptop, stu, stv, profile, psteps=20):
         mnu      (float)            U-component
         mnv      (float)            V-component
     '''
-    return mean_wind_npw(pbot, ptop, profile, psteps, stu, stv)
+    return mean_wind_npw(pbot, ptop, prof, psteps, stu, stv)
 
 
-def wind_shear(pbot, ptop, profile):
+def wind_shear(pbot, ptop, prof):
     '''
     Calculates the shear between the wind at (pbot) and (ptop).
 
@@ -153,21 +152,21 @@ def wind_shear(pbot, ptop, profile):
     ------
         pbot    (float)             Pressure of the bottom level (hPa)
         ptop    (float)             Pressure of the top level (hPa)
-        profile (profile object)    Profile Object
+        prof    (profile object)    Profile Object
 
     Returns
     -------
         shu      (float)            U-component
         shv      (float)            V-component
     '''
-    ubot, vbot = interp.components(pbot, profile)
-    utop, vtop = interp.components(ptop, profile)
+    ubot, vbot = interp.components(pbot, prof)
+    utop, vtop = interp.components(ptop, prof)
     shu = utop - ubot
     shv = vtop - vbot
     return shu, shv
 
 
-def helicity(lower, upper, profile, stu=0, stv=0):
+def helicity(lower, upper, prof, stu=0, stv=0):
     '''
     Calculates the relative helicity (m2/s2) of a layer from lower to upper.
     If storm-motion vector is supplied, storm-relative helicity, both
@@ -177,7 +176,7 @@ def helicity(lower, upper, profile, stu=0, stv=0):
     ------
         lower       (float)             Bottom level of layer (m, AGL)
         upper       (float)             Top level of layer (m, AGL)
-        profile     (profile object)    Profile Object
+        prof        (profile object)    Profile Object
         stu         (float; optional)   U-component of storm-motion
         stv         (float; optional)   V-component of storm-motion
 
@@ -187,30 +186,30 @@ def helicity(lower, upper, profile, stu=0, stv=0):
         phel        (float)             Positive Helicity (m2/s2)
         nhel        (float)             Negative Helicity (m2/s2)
     '''
-    lower = interp.msl(lower, profile)
-    upper = interp.msl(upper, profile)
-    plower = interp.pres(lower, profile)
-    pupper = interp.pres(upper, profile)
+    lower = interp.msl(lower, prof)
+    upper = interp.msl(upper, prof)
+    plower = interp.pres(lower, prof)
+    pupper = interp.pres(upper, prof)
     phel = 0
     nhel = 0
 
     # Find lower and upper ind bounds for looping
     i = 0
-    while interp.msl(profile.gSndg[i][1], profile) < lower: i+=1
+    while interp.msl(prof.gSndg[i][prof.zind], prof) < lower: i+=1
     lptr = i
-    while interp.msl(profile.gSndg[i][1], profile) < upper: i+=1
+    while interp.msl(prof.gSndg[i][prof.zind], prof) < upper: i+=1
     uptr = i
 
     # Integrate from interpolated bottom level to iptr level
-    sru1, srv1 = interp.components(plower, profile)
+    sru1, srv1 = interp.components(plower, prof)
     sru1 = KTS2MS(sru1 - stu)
     srv1 = KTS2MS(srv1 - stv)
 
     # Loop through levels
     for i in range(lptr, uptr+1):
         lyrh = 0
-        if QC(profile.gSndg[i][4]) and QC(profile.gSndg[i][5]):
-            sru2, srv2 = interp.components(profile.gSndg[i][0], profile)
+        if QC(prof.gSndg[i][prof.uind]) and QC(prof.gSndg[i][prof.vind]):
+            sru2, srv2 = interp.components(prof.gSndg[i][prof.pind], prof)
             sru2 = KTS2MS(sru2 - stu)
             srv2 = KTS2MS(srv2 - stv)
 
@@ -221,7 +220,7 @@ def helicity(lower, upper, profile, stu=0, stv=0):
             srv1 = srv2
 
     # Integrate from tptr level to interpolated top level
-    sru2, srv2 = interp.components(pupper, profile)
+    sru2, srv2 = interp.components(pupper, prof)
     sru2 = KTS2MS(sru2 - stu)
     srv2 = KTS2MS(srv2 - stv)
 
@@ -232,7 +231,7 @@ def helicity(lower, upper, profile, stu=0, stv=0):
     return phel+nhel, phel, nhel
 
 
-def max_wind(lower, upper, profile):
+def max_wind(lower, upper, prof):
     '''
     Finds the maximum wind speed of the layer given by lower and upper levels.
     In the event of the maximum wind speed occurring at multiple levels, the
@@ -242,7 +241,7 @@ def max_wind(lower, upper, profile):
     ------
         lower       (float)             Bottom level of layer (m, AGL)
         upper       (float)             Top level of layer (m, AGL)
-        profile     (profile object)    Profile Object
+        prof        (profile object)    Profile Object
 
     Returns
     -------
@@ -250,34 +249,35 @@ def max_wind(lower, upper, profile):
         maxu        (float)             Maximum U-component
         maxv        (float)             Maximum V-component
     '''
-    if lower == -1: lower = profile.gSndg[profile.sfc][0]
-    if upper == -1: upper = profile.gSndg[profile.gNumLevels-1][0]
+    if lower == -1: lower = prof.gSndg[prof.sfc][prof.pind]
+    if upper == -1: upper = prof.gSndg[prof.gNumLevels-1][prof.pind]
 
     # Find lower and upper ind bounds for looping
     i = 0
-    while profile.gSndg[i][0] > lower: i+=1
+    while prof.gSndg[i][prof.pind] > lower: i+=1
     lptr = i
-    while profile.gSndg[i][0] > upper: i+=1
+    while prof.gSndg[i][prof.pind] > upper: i+=1
     uptr = i
 
     # Start with interpolated bottom level
-    maxu, maxv = interp.components(lower, profile)
+    maxu, maxv = interp.components(lower, prof)
     maxspd = vector.comp2vec(maxu, maxv)[1]
     p = lower
 
     # Loop through all levels in layer
     for i in range(lptr, uptr+1):
-        if QC(profile.gSndg[i][0]) and QC(profile.gSndg[i][4]) and \
-           QC(profile.gSndg[i][5]):
-            spd = vector.comp2vec(profile.gSndg[i][4], profile.gSndg[i][5])[1]
+        if QC(prof.gSndg[i][prof.pind]) and QC(prof.gSndg[i][prof.uind]) and \
+           QC(prof.gSndg[i][prof.vind]):
+            spd = vector.comp2vec(prof.gSndg[i][prof.uind],
+                prof.gSndg[i][prof.vind])[1]
             if spd > maxspd:
                 maxspd = spd
-                maxu = profile.gSndg[i][4]
-                maxv = profile.gSndg[i][5]
-                p = profile.gSndg[i][0]
+                maxu = prof.gSndg[i][prof.uind]
+                maxv = prof.gSndg[i][prof.vind]
+                p = prof.gSndg[i][prof.pind]
 
     # Finish with interpolated top level
-    tmpu, tmpv = interp.components(upper, profile)
+    tmpu, tmpv = interp.components(upper, prof)
     tmpspd = vector.comp2vec(tmpu, tmpv)[1]
     if tmpspd > maxspd:
         maxu = tmpu
@@ -288,13 +288,13 @@ def max_wind(lower, upper, profile):
     return p, maxu, maxv
 
 
-def corfidi_mcs_motion(profile):
+def corfidi_mcs_motion(prof):
     '''
     Calculated the Meso-beta Elements (Corfidi) Vectors
 
     Inputs
     ------
-        profile     (profile object)    Profile Object
+        prof        (profile object)    Profile Object
 
     Returns
     -------
@@ -304,11 +304,11 @@ def corfidi_mcs_motion(profile):
         dnv         (float)             V-component of the downshear vector
     '''
     # Compute the tropospheric (850hPa-300hPa) mean wind
-    mnu1, mnv1 = mean_wind_npw(850., 300., profile)
+    mnu1, mnv1 = mean_wind_npw(850., 300., prof)
 
     # Compute the low-level (SFC-1500m) mean wind
-    p_1p5km = interp.pres(interp.msl(1500., profile), profile)
-    mnu2, mnv2 = mean_wind_npw(profile.gSndg[profile.sfc][0], p_1p5km, profile)
+    p_1p5km = interp.pres(interp.msl(1500., prof), prof)
+    mnu2, mnv2 = mean_wind_npw(prof.gSndg[prof.sfc][prof.pind], p_1p5km, prof)
 
     # Compute the upshear vector
     upu = mnu1 - mnu2
@@ -321,79 +321,50 @@ def corfidi_mcs_motion(profile):
     return upu, upv, dnu, dnv
 
 
-def non_parcel_bunkers_right_mover(profile):
+def non_parcel_bunkers_motion(prof):
     '''
     Compute the Bunkers Storm Motion for a Right Moving Supercell
 
     Inputs
     ------
-        profile     (profile object)        Profile Object
+        prof         (profile object)    Profile Object
 
     Returns
     -------
-        stu         (float)                 Storm Motion U-component
-        stv         (float)                 Storm Motion V-component
+        rstu         (float)            Right Storm Motion U-component
+        rstv         (float)            Right Storm Motion V-component
+        lstu         (float)            Left Storm Motion U-component
+        lstv         (float)            Left Storm Motion V-component
     '''
-    d = 7.5     # Deviation value emperically derived as 7.5 m/s
-    msl6km = interp.msl(6000., profile)
-    p6km = interp.pres(msl6km, profile)
+    d = MS2KTS(7.5)         # Deviation value emperically derived as 7.5 m/s
+    msl6km = interp.msl(6000., prof)
+    p6km = interp.pres(msl6km, prof)
 
     # SFC-6km Mean Wind
-    mnu6, mnv6 = mean_wind_npw(profile.gSndg[profile.sfc][0],
-        p6km, profile, 25)
+    mnu6, mnv6 = mean_wind_npw(prof.gSndg[prof.sfc][prof.pind],
+        p6km, prof, 25)
 
     # SFC-6km Shear Vector
-    shru6, shrv6 = wind_shear(profile.gSndg[profile.sfc][0],
-        p6km, profile)
+    shru6, shrv6 = wind_shear(prof.gSndg[prof.sfc][prof.pind],
+        p6km, prof)
 
     # Bunkers Right Motion
     tmp = d / vector.comp2vec(shru6, shrv6)[1]
-    stu = mnu6 + (tmp * shrv6)
-    stv = mnv6 - (tmp * shru6)
+    rstu = mnu6 + (tmp * shrv6)
+    rstv = mnv6 - (tmp * shru6)
+    lstu = mnu6 - (tmp * shrv6)
+    lstv = mnv6 + (tmp * shru6)
 
-    return stu, stv
-
-
-def non_parcel_bunkers_left_mover(profile):
-    '''
-    Compute the Bunkers Storm Motion for a Left Moving Supercell
-
-    Inputs
-    ------
-        profile     (profile object)        Profile Object
-
-    Returns
-    -------
-        stu         (float)                 Storm Motion U-component
-        stv         (float)                 Storm Motion V-component
-    '''
-    d = MS2KTS(7.5)     # Deviation value emperically derived as 7.5 m/s
-    msl6km = interp.msl(6000., profile)
-    p6km = interp.pres(msl6km, profile)
-
-    # SFC-6km Mean Wind
-    mnu6, mnv6 = mean_wind_npw(profile.gSndg[profile.sfc][0],
-        p6km, profile, 25)
-
-    # SFC-6km Shear Vector
-    shru6, shrv6 = wind_shear(profile.gSndg[profile.sfc][0],
-        p6km, profile)
-
-    # Bunkers Left Motion
-    tmp = d / vector.comp2vec(shru6, shrv6)[1]
-    stu = mnu6 - (tmp * shrv6)
-    stv = mnv6 + (tmp * shru6)
-
-    return stu, stv
+    return rstu, rstv, lstu, lstv
 
 
-def mbe_vectors(profile):
+def mbe_vectors(prof):
     '''
     Thin wrapper around corfidi_mcs_motion()
 
     Inputs
     ------
-        profile     (profile object)    Profile Object
+        prof        (profile object)    Profile Object
 
     Returns
     -------
@@ -402,4 +373,4 @@ def mbe_vectors(profile):
         dnu         (float)             U-component of the downshear vector
         dnv         (float)             V-component of the downshear vector
     '''
-    return corfidi_mcs_motion(profile)
+    return corfidi_mcs_motion(prof)
