@@ -5,7 +5,8 @@ from sharppy.sharptab.constants import *
 
 __all__ = ['lifted', 'drylift', 'lcltemp', 'thalvl', 'theta', 'wetlift',
            'wobf', 'satlift', 'temp_at_mixrat', 'mixratio', 'vappres',
-           'wetbulb', 'thetaw', 'thetae', 'virtemp', 'c2f', 'relh']
+           'wetbulb', 'thetaw', 'thetae', 'virtemp', 'relh', 'ctof', 'ctok',
+           'ftoc', 'ftok', 'ktoc', 'ktof']
 
 
 def lifted(p, t, td, lev):
