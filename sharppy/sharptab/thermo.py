@@ -5,8 +5,7 @@ from sharppy.sharptab.constants import *
 
 __all__ = ['lifted', 'drylift', 'lcltemp', 'thalvl', 'theta', 'wetlift',
            'wobf', 'satlift', 'temp_at_mixrat', 'mixratio', 'vappres',
-           'wetbulb', 'thetaw', 'thetae', 'virtemp', 'esfc', 'c2f', 'relh',
-           'effective_inflow_layer']
+           'wetbulb', 'thetaw', 'thetae', 'virtemp', 'c2f', 'relh']
 
 
 def lifted(p, t, td, lev):
@@ -335,14 +334,6 @@ def virtemp(p, t, td):
     tk = t + ZEROCNK
     w = 0.001 * mixratio(p, td)
     return (tk * (1. + w / eps) / (1. + w)) - ZEROCNK
-
-
-def esfc():
-    pass
-
-
-def effective_inflow_layer():
-    pass
 
 
 def relh(p, t, td):
