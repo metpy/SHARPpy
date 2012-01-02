@@ -5,7 +5,8 @@ from sharppy.sharptab.constants import *
 
 __all__ = ['mean_wind', 'mean_wind_npw', 'sr_wind', 'sr_wind_npw',
            'wind_shear', 'helicity', 'max_wind', 'corfidi_mcs_motion',
-           'bunkers_right_mover', 'bunkers_left_mover', 'mbe_vectors']
+           'non_parcel_bunkers_right_mover', 'non_parcel_bunkers_left_mover',
+           'mbe_vectors']
 
 
 def mean_wind(pbot, ptop, profile, psteps=20, stu=0, stv=0):
@@ -320,7 +321,7 @@ def corfidi_mcs_motion(profile):
     return upu, upv, dnu, dnv
 
 
-def bunkers_right_mover(profile):
+def non_parcel_bunkers_right_mover(profile):
     '''
     Compute the Bunkers Storm Motion for a Right Moving Supercell
 
@@ -353,7 +354,7 @@ def bunkers_right_mover(profile):
     return stu, stv
 
 
-def bunkers_left_mover(profile):
+def non_parcel_bunkers_left_mover(profile):
     '''
     Compute the Bunkers Storm Motion for a Left Moving Supercell
 
