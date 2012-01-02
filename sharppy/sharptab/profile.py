@@ -23,24 +23,26 @@ class Profile(object):
                 vals = snfile[i].split(",")
                 for j in range(0, len(vals)):
                     vals[j] = float(vals[j])
-
                 self.gSndg.append(vals)
 
             self.gStation = snfile[ttl][0:6]
             self.gDate = snfile[ttl][7:]
             self.gNumLevels = end-bgn+1
-            self.dir2Comp()
         else:
             pres = kwargs.get('pres')
             hght = kwargs.get('hght')
             temp = kwargs.get('temp')
             dwpt = kwargs.get('dwpt')
-            wdir = kwargs.get('wdir')
-            wspd = kwargs.get('wspd')
+            if 'wdir' in kwargs:
+                wnd1 = kwargs.get('wdir')
+                wnd2 = kwargs.get('wspd')
+            else:
+                wnd1 = kwargs.get('ucomp')
+                wnd2 = kwargs.get('vcomp')
 
             self.gSndg = []
             for i in range(len(pres)):
-                vals = [pres[i], hght[i], temp[i], dwpt[i], wdir[i], wspd[i]]
+                vals = [pres[i], hght[i], temp[i], dwpt[i], wnd1[i], wnd2[i]]
                 for j in range(0, len(vals)):
                     vals[j] = float(vals[j])
                 self.gSndg.append(vals)
@@ -48,18 +50,29 @@ class Profile(object):
             self.gDate = kwargs.get('date', '-----')
             self.gNumLevels = len(pres)
 
+        # Set Various Indices
+        self.pind = kwargs.get('pind', 0)
+        self.zind = kwargs.get('zind', 1)
+        self.tind = kwargs.get('tind', 2)
+        self.tdind = kwargs.get('tdind', 3)
+        self.uind = kwargs.get('uind', 4)
+        self.vind = kwargs.get('vind', 5)
+        if 'wdir' in kwargs:
+            self.wdirind = kwargs.get('wdirind', 4)
+            self.wspdind = kwargs.get('wspdind', 5)
+            self.dir2Comp()
         self.sfc = self.get_sfc()
 
 
     def get_sfc(self):
         if (self.gNumLevels < 3): return 0
         for i in range(0, self.gNumLevels):
-            if (QC(self.gSndg[i][2])): return i
-
+            if (QC(self.gSndg[i][self.tind])): return i
         return 0
 
 
     def dir2Comp(self):
         for i in range(self.gNumLevels):
-            self.gSndg[i][4], self.gSndg[i][5] = vector.vec2comp(
-                self.gSndg[i][4], self.gSndg[i][5])
+            self.gSndg[i][self.uind], self.gSndg[i][self.vind] = \
+                vector.vec2comp(self.gSndg[i][self.wdirind],
+                self.gSndg[i][self.wspdind])
