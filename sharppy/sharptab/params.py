@@ -1,10 +1,147 @@
 ''' Thermodynamic Parameter Routines '''
 import math
 from sharppy.sharptab import interp, vector, thermo, winds
-from sharppy.sharptab import parcel as ppcl
 from sharppy.sharptab.constants import *
 
-__all__ = ['k_index']
+__all__ = ['DefineParcel', 'Parcel', 'k_index', 't_totals', 'c_totals', 'v_totals',
+           'precip_water', 'parcel', 'temp_lvl', 'bulk_rich', 'max_temp',
+           'mean_mixratio', 'mean_theta', 'unstable_level',
+           'effective_inflow_layer_thermo']
+
+
+class DefineParcel(object):
+    '''
+    Create a parcel from a supplied profile object.
+
+    flag : int
+        Parcel Selection
+           -1: Use Previous Selection      # Not implemented as of 4/9/11
+            1: Observed Surface Parcel
+            2: Forecast Surface Parcel
+            3: Most Unstable Parcel
+            4: Mean Mixed Layer Parcel
+            5: User Defined Parcel
+            6: Mean Effective Layer Parcel
+
+    pres : float
+        Variable Pressure level (mb)
+    '''
+    def __init__(self, profile, flag, **kwargs):
+        self.flag = flag
+        if flag == 1:
+            self.presval = kwargs.get('pres', profile.gSndg[profile.sfc])
+            self.__sfc(profile)
+        elif flag == 2:
+            self.presval = kwargs.get('pres', 100)
+            self.__fcst(profile)
+        elif flag == 3:
+            self.presval = kwargs.get('pres', 300)
+            self.__mu(profile)
+        elif flag == 4:
+            self.presval = kwargs.get('pres', 100)
+            self.__ml(profile)
+        elif flag == 5:
+            self.presval = kwargs.get('pres', 100)
+            self.__user(profile)
+        elif flag == 6:
+            self.presval = kwargs.get('pres', 100)
+            self.__effective(profile)
+        else:
+            print 'Defaulting to Surface Parcel'
+            self.presval = kwargs.get('pres', profile.gSndg[profile.sfc])
+            self.__sfc()
+        print self.desc
+
+    def __sfc(self, profile):
+        ''' Create a parcel using surface conditions '''
+        self.desc = 'Surface Parcel'
+        self.temp = profile.gSndg[profile.sfc][2]
+        self.dwpt = profile.gSndg[profile.sfc][3]
+        self.pres = profile.gSndg[profile.sfc][0]
+
+    def __fcst(self, profile):
+        ''' Create a parcel using forecast conditions '''
+        self.desc = 'Forecast Surface Parcel'
+        self.temp = max_temp(profile, -1)
+        mmr = mean_mixratio(profile, -1, -1)
+        self.dwpt = thermo.temp_at_mixrat(mmr, profile.gSndg[profile.sfc][0])
+        self.pres = profile.gSndg[profile.sfc][0]
+
+    def __mu(self, profile):
+        ''' Create the most unstable parcel within defined level '''
+        self.desc = 'Most Unstable Parcel in Lowest %.2f hPa' % self.presval
+        diff = profile.gSndg[profile.sfc][0] - self.presval
+        self.pres = unstable_level(profile, -1, diff)
+        self.temp = interp.temp(self.pres, profile)
+        self.dwpt = interp.dwpt(self.pres, profile)
+
+    def __ml(self, profile):
+        ''' Create the mixed-layer parcel; mixing over defined pressure '''
+        self.desc = '%.2f hPa Mixed Layer Parcel' % self.presval
+        self.pres = profile.gSndg[profile.sfc][0]
+        diff = profile.gSndg[profile.sfc][0] - self.presval
+        mtha = mean_theta(profile, -1, diff)
+        mmr = mean_mixratio(profile, -1, diff)
+        self.temp = thermo.theta(1000., mtha, self.pres)
+        self.dwpt = thermo.temp_at_mixrat(mmr, self.pres)
+
+    def __user(self, profile):
+        ''' Create a user-defined parcel '''
+        self.desc = '%.2f hPa Parcel' % self.presval
+        self.pres = self.presval
+        self.temp = interp.temp(self.pres, profile)
+        self.dwpt = interp.dwpt(self.pres, profile)
+
+    def __effective(self, profile):
+        ''' Create the mean-effective layer parcel '''
+        pbot, ptop = effective_inflow_layer_thermo(100, -250,
+            profile, self.flag)
+        if pbot > 0:
+            self.desc = '%.2f hPa Mean Effective Layer' % (pbot-ptop)
+            mtha = mean_theta(profile, pbot, ptop)
+            mmr = mean_mixratio(profile, pbot, ptop)
+            self.pres = (ptop + pbot) / 2.
+            self.temp = thermo.theta(1000., mtha, self.pres)
+            self.dwpt = thermo.temp_at_mixrat(mmr, self.pres)
+        else:
+            self.desc = 'Defaulting to Surface Layer'
+            self.pres = profile.gSndg[profile.sfc][0]
+            self.temp = profile.gSndg[profile.sfc][2]
+            self.dwpt = profile.gSndg[profile.sfc][3]
+
+
+class Parcel(object):
+    ''' Initialize variables for a parcel '''
+    def __init__(self, lower, upper, pres, temp, dwpt, missing=RMISSD):
+        self.pres = pres
+        self.temp = temp
+        self.dwpt = dwpt
+        self.blayer = lower
+        self.tlayer = upper
+        self.entrain = 0.
+        self.lclpres = RMISSD
+        self.lclhght = RMISSD
+        self.lfcpres = RMISSD
+        self.lfchght = RMISSD
+        self.elpres = RMISSD
+        self.elhght = RMISSD
+        self.mplpres = RMISSD
+        self.mplhght = RMISSD
+        self.bplus = RMISSD
+        self.bminus = RMISSD
+        self.bfzl = RMISSD
+        self.b3km = RMISSD
+        self.b6km = RMISSD
+        self.wm10c = RMISSD
+        self.wm30c = RMISSD
+        self.li5 = RMISSD
+        self.li3 = RMISSD
+        self.brnshear = RMISSD
+        self.brn = RMISSD
+        self.limax = RMISSD
+        self.limaxpres = RMISSD
+        self.cap = RMISSD
+        self.cappres = RMISSD
 
 
 def k_index(profile):
@@ -132,7 +269,7 @@ def precip_water(lower, upper, profile):
     return pwat * 0.00040173
 
 
-def parcel(lower, upper, lplvals, profile):
+def parcelx(lower, upper, pres, temp, dwpt, flag, profile):
     '''
     Lifts the specified parcel, calculated various levels and parameters from
     the profile object. B+/B- are calculated based on the specified layer.
@@ -143,16 +280,17 @@ def parcel(lower, upper, lplvals, profile):
     ------
         lower       (float)                 Lower-bound lifting level (hPa)
         upper       (float)                 Upper-bound lifting level
-        lplvals     (defined parcel object) Defined Parcel Object
+        pres        (float)                 Pressure of parcel to lift (hPa)
+        temp        (float)                 Temperature of parcel to lift (C)
+        dwpt        (float)                 Dew Point of parcel to lift (C)
+        flag        (int)                   Parcel flag
         profile     (profile object)        Profile Object
+
     Returns
     -------
         pcl         (parcel object)         Parcel Object
     '''
-    pcl = ppcl.Parcel(-1, -1, lplvals)
-    pres = pcl.pres
-    temp = pcl.temp
-    dwpt = pcl.dwpt
+    pcl = Parcel(-1, -1, pres, temp, dwpt)
     if profile.gNumLevels < 1: return pcl
 
     lyre = -1
@@ -207,10 +345,13 @@ def parcel(lower, upper, lplvals, profile):
     # This will be done in 10mb increments, and will use the virtual
     # temperature correction where possible
     pinc = -10
-    for pp in range(int(lower), int(blupper), int(pinc)):
+    a = int(lower)
+    b = int(blupper)
+    for pp in range(a, b, int(pinc)):
         pp1 = pp
         pp2 = pp + pinc
-        if pp2 < blupper: pp2 = blupper
+        if pp2 < blupper:
+            pp2 = blupper
         dz = interp.hght(pp2, profile) - interp.hght(pp1, profile)
 
         # Calculate difference between Tv_parcel and Tv_environment at top
@@ -517,7 +658,7 @@ def parcel(lower, upper, lplvals, profile):
             pcl.li3 = a - thermo.virtemp(300, b, b)
 
     # Calculate BRN if available
-    pcl = bulk_rich(pcl, profile)
+    pcl = bulk_rich(pcl, flag, profile)
 
     # pcl.bminus = cinh_old
     # if pcl.bplus == 0: pcl.bminus = 0.
@@ -551,13 +692,14 @@ def temp_lvl(temp, profile):
     return RMISSD
 
 
-def bulk_rich(pcl, profile):
+def bulk_rich(pcl, flag, profile):
     '''
     Calculates the Bulk Richardson Number for a given parcel.
 
     Inputs
     ------
         pcl         (parcel object)         Parcel Object
+        flag        (int)                   Parcel Flag
         profile     (profile object)        Profile Object
 
     Returns
@@ -565,16 +707,22 @@ def bulk_rich(pcl, profile):
         Bulk Richardson Number
     '''
     # Make sure parcel is initialized
-    if pcl.lplvals.flag == RMISSD: return RMISSD
-    elif pcl.lplvals.flag > 0 and pcl.lplvals.flag < 4:
+    if flag == RMISSD: return RMISSD
+    elif flag > 0 and flag < 4:
         ptop = interp.pres(interp.msl(6000., profile), profile)
         pbot = profile.gSndg[profile.sfc][0]
     else:
-        h0 = interp.hght(pcl.lplvals.pres, profile)
-        pbot = interp.pres(h0 - 500., profile)
+        h0 = interp.hght(pcl.pres, profile)
+        pbot = interp.pres(h0 + 500., profile)
         if not QC(pbot): pbot = profile.gSndg[profile.sfc][0]
-        h1 = interp.pres(h1, profile)
+        h1 = interp.hght(pbot, profile)
         ptop = interp.pres(h1 + 6000., profile)
+
+
+    if not ptop:
+        pcl.brnshear = RMISSD
+        pcl.brn = RMISSD
+        return pcl
 
     # Calculate lowest 500m mean wind
     p = interp.pres(interp.hght(pbot, profile) + 500., profile)
@@ -594,6 +742,263 @@ def bulk_rich(pcl, profile):
     pcl.brnshear = pcl.brnshear**2 / 2.
     pcl.brn = pcl.bplus / pcl.brnshear
     return pcl
+
+
+def max_temp(profile, mixlyr=-1):
+    '''
+    Calculates a maximum temperature forecast based on the depth of the mixing
+    layer and low-level temperatures
+
+    Inputs
+    ------
+        profile     (profile object)    Profile Object
+        mixlyr      (float)             Top of layer over which to "mix" (hPa)
+
+    Returns
+    -------
+        mtemp       (float)                 Forecast Maximum Temperature
+    '''
+    sfcpres = profile.gSndg[profile.sfc][0]
+    if mixlyr == -1:
+        mixlyr = sfcpres - 100.
+
+    temp = thermo.ctok(interp.temp(mixlyr, profile)) + 2.
+    return thermo.ktoc(temp * (sfcpres / mixlyr)**ROCP)
+
+
+def mean_mixratio(profile, lower=-1, upper=-1):
+    '''
+    Calculates the mean mixing ratio from a profile object within the
+    specified layer.
+
+    Inputs
+    ------
+        profile     (profile object)    Profile Object
+        lower       (float)             Bottom level (hPa) [-1=SFC]
+        upper       (float)             Top level (hPa) [-1=SFC-100hPa]
+
+    Returns
+    -------
+        Mean Mixing Ratio   (float)
+    '''
+    if lower == -1: lower = profile.gSndg[profile.sfc][0]
+    if upper == -1: upper = profile.gSndg[profile.sfc][0] - 100.
+
+    if not QC(interp.temp(upper, profile)): mmw = RMISSD
+    if not QC(interp.temp(lower, profile)): profile.gSndg[profile.sfc][0]
+
+    # Find lowest observations in the layer
+    i = 0
+    while profile.gSndg[i][0] > lower: i+=1
+    while not QC(profile.gSndg[i][3]): i+=1
+    lptr = i
+    if profile.gSndg[i][0] == lower: lptr+=1
+
+    # Find highest observations in the layer
+    i = profile.gNumLevels - 1
+    while profile.gSndg[i][0] < lower: i-=1
+    uptr = i
+    if profile.gSndg[i][0] == upper: uptr-=1
+
+    totd = 0
+    totp = 0
+
+    # Start with interpolated bottom layer
+    p1 = lower
+    dp1 = interp.dwpt(p1, profile)
+    num = 1
+
+    # Calculate every level that reports a dew point
+    for i in range(lptr, uptr+1):
+        if QC(profile.gSndg[i][3]):
+            dp2 = profile.gSndg[i][3]
+            p2 = profile.gSndg[i][0]
+            dbar = (db1 + db2) / 2.
+            pbar = (p1 + p2) / 2.
+            totd += dbar
+            totp += pbar
+            dp1 = dp2
+            p1 = p2
+            num += 1
+
+    # Finish with top layer
+    dp2 = interp.dwpt(upper, profile)
+    p2 = upper
+    dbar = (dp1 + dp2) / 2.
+    pbar = (p1 + p2) / 2.
+    totd += dbar
+    totp += pbar
+    return thermo.mixratio(totp/num, totd/num)
+
+
+def mean_theta(profile, lower=-1, upper=-1):
+    '''
+    Calculates the mean theta from a profile object within the
+    specified layer.
+
+    Inputs
+    ------
+        profile     (profile object)    Profile Object
+        lower       (float)             Bottom level (hPa) [-1=SFC]
+        upper       (float)             Top level (hPa) [-1=SFC-100hPa]
+
+    Returns
+    -------
+        Mean Theta   (float)
+    '''
+    if lower == -1: lower = profile.gSndg[profile.sfc][0]
+    if upper == -1: upper = profile.gSndg[profile.sfc][0] - 100.
+
+    if not QC(interp.temp(upper, profile)): mmw = RMISSD
+    if not QC(interp.temp(lower, profile)): profile.gSndg[profile.sfc][0]
+
+    # Find lowest observations in the layer
+    i = 0
+    while profile.gSndg[i][0] > lower: i+=1
+    while not QC(profile.gSndg[i][2]): i+=1
+    lptr = i
+    if profile.gSndg[i][0] == lower: lptr+=1
+
+    # Find highest observations in the layer
+    i = profile.gNumLevels - 1
+    while profile.gSndg[i][0] < lower: i-=1
+    uptr = i
+    if profile.gSndg[i][0] == upper: uptr-=1
+
+    tott = 0
+
+    # Start with interpolated bottom layer
+    t1 = thermo.theta(lower, interp.temp(lower, profile), 1000.)
+    num = 1
+
+    # Calculate every level that reports a dew point
+    for i in range(lptr, uptr+1):
+        if QC(profile.gSndg[i][2]):
+            t2 = thermo.theta(profile.gSndg[i][0], profile.gSndg[i][2], 1000.)
+            tbar = (t1 + t2) / 2.
+            tott += tbar
+            t1 = t2
+            num += 1
+
+    # Finish with top layer
+    t2 = thermo.theta(upper, interp.temp(upper, profile), 1000.)
+    tbar = (t1 + t2) / 2.
+    tott += tbar
+    return tott / num
+
+
+def unstable_level(profile, lower, upper):
+    '''
+    Finds the most unstable level between the lower and upper levels.
+
+    Inputs
+    ------
+        profile     (profile object)    Profile Object
+        lower       (float)             Bottom level (hPa) [-1=SFC]
+        upper       (float)             Top level (hPa) [-1=SFC-100hPa]
+
+    Returns
+    -------
+        Pressure Level of most unstable level   (float [hPa])
+    '''
+    if lower == -1: lower = profile.gSndg[profile.sfc][0]
+    if upper == -1: upper = profile.gSndg[profile.sfc][0] - 300.
+
+    # Make sure this is a valid layer
+    while not QC(interp.dwpt(upper, profile)): upper += 50.
+    if not QC(interp.temp(lower, profile)):
+        lower = profile.gSndg[profile.sfc][0]
+
+    # Find lowest observations in the layer
+    i = 0
+    while profile.gSndg[i][0] > lower: i+=1
+    while not QC(profile.gSndg[i][2]): i+=1
+    lptr = i
+    if profile.gSndg[i][0] == lower: lptr+=1
+
+    # Find highest observations in the layer
+    i = profile.gNumLevels - 1
+    while profile.gSndg[i][0] < lower: i-=1
+    uptr = i
+    if profile.gSndg[i][0] == upper: uptr-=1
+
+    # Start with interpolated bottom layer
+    p1 = lower
+    t1 = interp.temp(p1, profile)
+    td1 = interp.dwpt(p1, profile)
+    p2, t2 = thermo.drylift(p1, t1, td1)
+    tmax = thermo.wetlift(p2, t2, 1000.)
+    pmax = p1
+
+    # Calculate every level that reports a dew point
+    for i in range(lptr, uptr+1):
+        if QC(profile.gSndg[i][3]):
+            p1 = profile.gSndg[i][0]
+            t1 = profile.gSndg[i][2]
+            td1 = profile.gSndg[i][3]
+            p2, t2 = thermo.drylift(p1, t1, td1)
+            t1 = thermo.wetlift(p2, t2, 1000.)
+            if t1 > tmax:
+                tmax = t1
+                pmax = p1
+
+    # Finish with interpolated top layer
+    p1 = upper
+    t1 = interp.temp(p1, profile)
+    td1 = interp.dwpt(p1, profile)
+    p2, t2 = thermo.drylift(p1, t1, td1)
+    t1 = thermo.wetlift(p2, t2, 1000.)
+    if t1 > tmax:
+        pmax = profile.gSndg[i][0]
+
+    return pmax
+
+
+def effective_inflow_layer_thermo(ecape, ecinh, profile, flag):
+    '''
+    Calculates the top and bottom of the effective inflow layer based on
+    research by Thompson et al. (2004)
+
+    Inputs
+    ------
+        ecape       (float)                 CAPE Threshold
+        ecinh       (float)                 CINH Threshold
+        profile     (profile object)        Profile Object
+        flag        (int)                   Parcel Flag
+    Returns
+    -------
+        pbot        (float)                 Pressure at bottom level (hPa)
+        ptop        (float)                 Pressure at top level (hPa)
+    '''
+    mulplvals = DefineParcel(profile, 3)
+    mupcl = parcelx(-1, -1, mulplvals.pres, mulplvals.temp, mulplvals.dwpt,
+        mulplvals.flag, profile)
+    mucape = mupcl.bplus
+    mucinh = mupcl.bminus
+
+    pbot = RMISSD
+    ptop = RMISSD
+
+    if mucape >= ecape and mucinh > ecinh:
+        # Begin at surface and search upward for effective surface
+        for i in range(profile.sfc, profile.gNumLevels-1):
+            pcl = parcelx(-1, -1, profile.gSndg[i][0], profile.gSndg[i][2],
+                profile.gSndg[i][3], flag, profile)
+            if pcl.bplus >= ecape and pcl.bminus >= ecinh:
+                pbot = profile.gSndg[i][0]
+                break
+        if pbot == RMISSD: return pbot, ptop
+        bptr = i
+        # Keep searching upward for the effective top
+        for i in range(bptr, profile.gNumLevels-1):
+            pcl = parcelx(-1, -1, profile.gSndg[i][0], profile.gSndg[i][2],
+                profile.gSndg[i][3], flag, profile)
+            if pcl.bplus <= ecape or pcl.bminus <= ecinh:
+                ptop = profile.gSndg[i-1][0]
+                break
+
+    return pbot, ptop
+
 
 
 
