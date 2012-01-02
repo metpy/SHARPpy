@@ -77,10 +77,10 @@ class DefineParcel(object):
     def __ml(self, prof):
         ''' Create the mixed-layer parcel; mixing over defined pressure '''
         self.desc = '%.2f hPa Mixed Layer Parcel' % self.presval
-        self.pres = profile.gSndg[profile.sfc][0]
-        diff = profile.gSndg[profile.sfc][0] - self.presval
-        mtha = mean_theta(profile, -1, diff)
-        mmr = mean_mixratio(profile, -1, diff)
+        self.pres = prof.gSndg[prof.sfc][prof.pind]
+        diff = prof.gSndg[prof.sfc][prof.pind] - self.presval
+        mtha = mean_theta(prof, -1, diff)
+        mmr = mean_mixratio(prof, -1, diff)
         self.temp = thermo.theta(1000., mtha, self.pres)
         self.dwpt = thermo.temp_at_mixrat(mmr, self.pres)
 
