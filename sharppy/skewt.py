@@ -181,8 +181,11 @@ class SkewT:
                     break
 
 
-    def drawParcelTrace(self, p, t, td):
+    def drawParcelTrace(self, pcl):
         ''' Draw the trace of supplied parcel '''
+        p = pcl.pres
+        t = pcl.temp
+        td = pcl.dwpt
         x1 = self.temp2Pix(t, p)
         y1 = self.pres2Pix(p)
         p2, t2 = tab.thermo.drylift(p, t, td)
@@ -202,8 +205,11 @@ class SkewT:
                 width=2, dash=(1,1))
 
 
-    def drawVirtualParcelTrace(self, p, t, td):
+    def drawVirtualParcelTrace(self, pcl):
         ''' Draw the trace of supplied parcel '''
+        p = pcl.pres
+        t = pcl.temp
+        td = pcl.dwpt
         x1 = self.temp2Pix(tab.thermo.virtemp(p, t, td), p)
         y1 = self.pres2Pix(p)
         p2, t2 = tab.thermo.drylift(p, t, td)
