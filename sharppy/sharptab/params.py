@@ -311,6 +311,7 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
     totp = 0.
     totn = 0.
     tote = 0.
+    cinh_old = 0.
 
     # See if default layer is specified
     if lower == -1:
