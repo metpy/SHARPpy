@@ -776,9 +776,7 @@ def max_temp(prof, mixlyr=-1):
         mtemp       (float)             Forecast Maximum Temperature
     '''
     sfcpres = prof.gSndg[prof.sfc][prof.pind]
-    if mixlyr == -1:
-        mixlyr = sfcpres - 100.
-
+    if mixlyr == -1: mixlyr = sfcpres - 100.
     temp = thermo.ctok(interp.temp(mixlyr, prof)) + 2.
     return thermo.ktoc(temp * (sfcpres / mixlyr)**ROCP)
 
@@ -813,7 +811,7 @@ def mean_mixratio(prof, lower=-1, upper=-1):
 
     # Find highest observations in the layer
     i = prof.gNumLevels - 1
-    while prof.gSndg[i][prof.pind] < lower: i-=1
+    while prof.gSndg[i][prof.pind] < upper: i-=1
     uptr = i
     if prof.gSndg[i][prof.pind] == upper: uptr-=1
 
@@ -830,9 +828,9 @@ def mean_mixratio(prof, lower=-1, upper=-1):
         if QC(prof.gSndg[i][prof.tdind]):
             dp2 = prof.gSndg[i][prof.tdind]
             p2 = prof.gSndg[i][prof.pind]
-            dbar = (db1 + db2) / 2.
+            dpbar = (dp1 + dp2) / 2.
             pbar = (p1 + p2) / 2.
-            totd += dbar
+            totd += dpbar
             totp += pbar
             dp1 = dp2
             p1 = p2
