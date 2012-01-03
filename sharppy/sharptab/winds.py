@@ -198,8 +198,9 @@ def helicity(lower, upper, prof, stu=0, stv=0):
     while interp.msl(prof.gSndg[i][prof.zind], prof) < lower: i+=1
     lptr = i
     if interp.msl(prof.gSndg[i][prof.zind], prof) == lower: lptr+=1
-    while interp.msl(prof.gSndg[i][prof.zind], prof) < upper: i+=1
+    while interp.msl(prof.gSndg[i][prof.zind], prof) <= upper: i+=1
     uptr = i
+    if interp.msl(prof.gSndg[i][prof.zind], prof) == upper: uptr-=1
 
 
     # Integrate from interpolated bottom level to iptr level
@@ -209,12 +210,10 @@ def helicity(lower, upper, prof, stu=0, stv=0):
 
     # Loop through levels
     for i in range(lptr, uptr+1):
-        lyrh = 0
         if QC(prof.gSndg[i][prof.uind]) and QC(prof.gSndg[i][prof.vind]):
             sru2, srv2 = interp.components(prof.gSndg[i][prof.pind], prof)
             sru2 = KTS2MS(sru2 - stu)
             srv2 = KTS2MS(srv2 - stv)
-
             lyrh = (sru2 * srv1) - (sru1 * srv2)
             if lyrh > 0: phel += lyrh
             else: nhel += lyrh
@@ -229,7 +228,6 @@ def helicity(lower, upper, prof, stu=0, stv=0):
     lyrh = (sru2 * srv1) - (sru1 * srv2)
     if lyrh > 0: phel += lyrh
     else: nhel += lyrh
-
     return phel+nhel, phel, nhel
 
 
