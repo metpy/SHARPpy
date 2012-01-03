@@ -57,7 +57,7 @@ class Profile(object):
         self.tdind = kwargs.get('tdind', 3)
         self.uind = kwargs.get('uind', 4)
         self.vind = kwargs.get('vind', 5)
-        if 'wdir' in kwargs:
+        if 'uind' not in kwargs:
             self.wdirind = kwargs.get('wdirind', 4)
             self.wspdind = kwargs.get('wspdind', 5)
             self.dir2Comp()
