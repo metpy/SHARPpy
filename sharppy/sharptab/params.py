@@ -726,19 +726,22 @@ def bulk_rich(pcl, flag, prof):
         Bulk Richardson Number
     '''
     # Make sure parcel is initialized
-    if flag == RMISSD: return RMISSD
+    if flag == RMISSD:
+        pbot = RMISSD
     elif flag > 0 and flag < 4:
         ptop = interp.pres(interp.msl(6000., prof), prof)
-        pbot = prof.gSndg[prof.sfc][0]
+        pbot = prof.gSndg[prof.sfc][prof.pind]
     else:
         h0 = interp.hght(pcl.pres, prof)
-        pbot = interp.pres(h0 + 500., prof)
+        try:
+            pbot = interp.pres(h0 - 500., prof)
+        except:
+            pbot = RMISSD
         if not QC(pbot): pbot = prof.gSndg[prof.sfc][prof.pind]
         h1 = interp.hght(pbot, prof)
         ptop = interp.pres(h1 + 6000., prof)
 
-
-    if not ptop:
+    if not QC(pbot) or not QC(ptop):
         pcl.brnshear = RMISSD
         pcl.brn = RMISSD
         return pcl
@@ -751,7 +754,10 @@ def bulk_rich(pcl, flag, prof):
     mnuu, mnuv = winds.mean_wind(pbot, ptop, prof)
 
     # Make sure CAPE and Shear are available
-    if not QC(pcl.bplus) or not QC(mnlu) or not QC(mnuu): return RMISSD
+    if not QC(pcl.bplus) or not QC(mnlu) or not QC(mnuu):
+        pcl.brnshear = RMISSD
+        pcl.brn = RMISSD
+        return pcl
 
     # Calculate shear between levels
     dx = mnuu - mnlu
