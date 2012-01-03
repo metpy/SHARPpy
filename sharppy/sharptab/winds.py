@@ -44,7 +44,7 @@ def mean_wind(pbot, ptop, prof, psteps=20, stu=0, stv=0):
         wgt = 0
         usum = 0
         vsum = 0
-        for p in range(int(pbot), int(ptop), -pinc):
+        for p in range(int(pbot), int(ptop)+1, -pinc):
             utmp, vtmp = interp.components(p, prof)
             usum += (utmp - stu) * p
             vsum += (vtmp - stv) * p
@@ -197,8 +197,10 @@ def helicity(lower, upper, prof, stu=0, stv=0):
     i = 0
     while interp.msl(prof.gSndg[i][prof.zind], prof) < lower: i+=1
     lptr = i
+    if interp.msl(prof.gSndg[i][prof.zind], prof) == lower: lptr+=1
     while interp.msl(prof.gSndg[i][prof.zind], prof) < upper: i+=1
     uptr = i
+
 
     # Integrate from interpolated bottom level to iptr level
     sru1, srv1 = interp.components(plower, prof)
@@ -342,7 +344,7 @@ def non_parcel_bunkers_motion(prof):
 
     # SFC-6km Mean Wind
     mnu6, mnv6 = mean_wind_npw(prof.gSndg[prof.sfc][prof.pind],
-        p6km, prof, 25)
+        p6km, prof, 20)
 
     # SFC-6km Shear Vector
     shru6, shrv6 = wind_shear(prof.gSndg[prof.sfc][prof.pind],
