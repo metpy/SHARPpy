@@ -6,7 +6,8 @@ from sharppy.sharptab.constants import *
 __all__ = ['DefineParcel', 'Parcel', 'k_index', 't_totals', 'c_totals',
            'v_totals', 'precip_water', 'parcel', 'temp_lvl', 'bulk_rich',
            'max_temp', 'mean_mixratio', 'mean_theta', 'unstable_level',
-           'effective_inflow_layer', 'bunkers_storm_motion', 'convective_temp']
+           'effective_inflow_layer', 'bunkers_storm_motion', 'convective_temp',
+           'esfc', 'lapse_rate']
 
 
 class DefineParcel(object):
@@ -1117,6 +1118,26 @@ def convective_temp(prof, mincinh=-1.):
     return sfctemp
 
 
+def esfc(prof, val=50.):
+    '''
+    Calculates the effective surface for elevated convection. Assumes that
+    the lowest layer with CAPE >= val is the "surface".
+
+    Inputs
+    ------
+        prof        (profile object)    Profile Object
+        val         (float)             Amount of CAPE necessary for CI
+
+    Returns
+    -------
+        Level of the effective surface (float [hPa])
+    '''
+    for i in range(prof.sfc, prof.gNumLevels):
+        if prof.gSndg[prof.sfc][prof.pind] < 500.: break
+        pcl = parcelx(-1, -1, prof.gSndg[i][prof.pind],
+            prof.gSndg[i][prof.tind], prof.gSndg[i][prof.tdind], prof, 5)
+        if pcl.bplus >= val: return prof.gSndg[i][prof.pind]
+    return RMISSD
 
 
 
