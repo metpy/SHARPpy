@@ -1140,6 +1140,39 @@ def esfc(prof, val=50.):
     return RMISSD
 
 
+def lapse_rate(lower, upper, prof, pres=1):
+    '''
+    Calculates the lapse rate (C/km) from a profile object
+
+    Inputs
+    ------
+        lower       (float)             Lower Bound of lapse rate
+        upper       (float)             Upper Bound of lapse rate
+        prof        (profile object)    Profile Object
+        pres        (int 0/1)           Flag to know to convert pres to height
+
+    Returns
+    -------
+        lapse rate  (float [C/km])
+    '''
+    if pres:
+        p1 = lower
+        p2 = upper
+        z1 = interp.hght(lower, prof)
+        z2 = interp.hght(upper, prof)
+    else:
+        z1 = interp.msl(lower, prof)
+        z2 = interp.msl(upper, prof)
+        p1 = interp.pres(z1, prof)
+        p2 = interp.pres(z2, prof)
+
+    tv1 = interp.vtmp(p1, prof)
+    tv2 = interp.vtmp(p2, prof)
+    if not QC(tv1) or not QC(tv2): return RMISSD
+    return (tv2 - tv1) / (z2 - z1) * -1000.
+
+
+
 
 
 
