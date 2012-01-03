@@ -205,8 +205,9 @@ class SkewT:
                 width=2, dash=(1,1))
 
 
-    def drawVirtualParcelTrace(self, pcl):
+    def drawVirtualParcelTrace(self, pcl, **kwargs):
         ''' Draw the trace of supplied parcel '''
+        color = kwargs.get('color', self.tvpcolor)
         p = pcl.pres
         t = pcl.temp
         td = pcl.dwpt
@@ -215,7 +216,7 @@ class SkewT:
         p2, t2 = tab.thermo.drylift(p, t, td)
         x2 = self.temp2Pix(tab.thermo.virtemp(p2, t2, t2), p2)
         y2 = self.pres2Pix(p2)
-        self.gCanvas.create_line(x1, y1, x2, y2, fill=self.tvpcolor,
+        self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
             width=2, dash=(1,1))
 
         for i in range(int(p2 + self.dp), int(self.pmin-1), int(self.dp)):
@@ -225,7 +226,7 @@ class SkewT:
             x2 = self.temp2Pix(tab.thermo.virtemp(i, t3, t3), float(i))
             y2 = self.pres2Pix(float(i))
             if x2 < self.tlx: break
-            self.gCanvas.create_line(x1, y1, x2, y2, fill=self.tvpcolor,
+            self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
                 width=2, dash=(1,1))
 
 
