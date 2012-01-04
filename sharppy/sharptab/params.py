@@ -510,8 +510,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             pe2 = temp_lvl(0., prof)
             if pe2 > pe3:
                 pcl.bfzl = 0
-                pe2 = RMISSD
-            if QC(pe2):
+            elif QC(pe2):
                 h2 = interp.hght(pe2, prof)
                 te2 = interp.vtmp(pe2, prof)
                 tp2 = thermo.wetlift(pe3, tp3, pe2)
@@ -534,8 +533,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             pe2 = temp_lvl(-10., prof)
             if pe2 > pe3:
                 pcl.bfzl = 0
-                pe2 = RMISSD
-            if QC(pe2):
+            elif QC(pe2):
                 h2 = interp.hght(pe2, prof)
                 te2 = interp.vtmp(pe2, prof)
                 tp2 = thermo.wetlift(pe3, tp3, pe2)
@@ -558,8 +556,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             pe2 = temp_lvl(-30., prof)
             if pe2 > pe3:
                 pcl.bfzl = 0
-                pe2 = RMISSD
-            if QC(pe2):
+            elif QC(pe2):
                 h2 = interp.hght(pe2, prof)
                 te2 = interp.vtmp(pe2, prof)
                 tp2 = thermo.wetlift(pe3, tp3, pe2)
