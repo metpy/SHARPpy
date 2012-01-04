@@ -486,7 +486,6 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
                 pcl.bplus = totp
                 if pe2 > 500.: pcl.bminus = totn + lyrf
                 else: pcl.bminus = totn
-
             pe2 = upper
             h2 = interp.hght(pe2, prof)
             te2 = interp.vtmp(pe2, prof)
@@ -509,6 +508,9 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             if lyrf > 0.: pcl.bfzl = totp - lyrf
             else: pcl.bfzl = totp
             pe2 = temp_lvl(0., prof)
+            if pe2 > pe3:
+                pcl.bfzl = 0
+                pe2 = RMISSD
             if QC(pe2):
                 h2 = interp.hght(pe2, prof)
                 te2 = interp.vtmp(pe2, prof)
@@ -530,6 +532,9 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             if lyrf > 0.: pcl.wm10c = totp - lyrf
             else: pcl.wm10c = totp
             pe2 = temp_lvl(-10., prof)
+            if pe2 > pe3:
+                pcl.bfzl = 0
+                pe2 = RMISSD
             if QC(pe2):
                 h2 = interp.hght(pe2, prof)
                 te2 = interp.vtmp(pe2, prof)
@@ -551,6 +556,9 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             if lyrf > 0.: pcl.wm30c = totp - lyrf
             else: pcl.wm30c = totp
             pe2 = temp_lvl(-30., prof)
+            if pe2 > pe3:
+                pcl.bfzl = 0
+                pe2 = RMISSD
             if QC(pe2):
                 h2 = interp.hght(pe2, prof)
                 te2 = interp.vtmp(pe2, prof)
@@ -565,7 +573,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
         # Is this the 3km level
         if pcl.lclhght < 3000.:
             h = interp.agl(interp.hght(pe2, prof), prof)
-            if h >= 2000. and not QC(pcl.b3km):
+            if h >= 3000. and not QC(pcl.b3km):
                 pe3 = pelast
                 h3 = interp.hght(pe3, prof)
                 te3 = interp.vtmp(pe3, prof)
@@ -589,7 +597,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
         # Is this the 6km level
         if pcl.lclhght < 6000.:
             h = interp.agl(interp.hght(pe2, prof), prof)
-            if h >= 5000. and not QC(pcl.b6km):
+            if h >= 6000. and not QC(pcl.b6km):
                 pe3 = pelast
                 h3 = interp.hght(pe3, prof)
                 te3 = interp.vtmp(pe3, prof)
