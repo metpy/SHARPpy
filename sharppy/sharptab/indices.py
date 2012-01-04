@@ -39,11 +39,16 @@ def scp(prof, **kwargs):
     cape = mupcl.bplus
     elhght = mupcl.elhght
     if not QC(cape): return RMISSD
-    if cape >= 100. and elhght < 0.:
-        base = interp.pres(interp.msl(0.), prof)
-        top = interp.pres(interp.msl(6000.), prof)
-        shru, shrv = winds.wind_shear(base, top)
+    rstu, rstv = params.bunkers_storm_motion(prof, mupcl=mupcl)[:2]
+    if cape < 100. or elhght < 0.:
+        base = 0.
+        ztop = 6000.
+        pbot = interp.pres(interp.msl(base, prof), prof)
+        ptop = interp.pres(interp.msl(ztop, prof), prof)
+        shru, shrv = winds.wind_shear(pbot, ptop, prof)
         shrmag = vector.mag(shru, shrv)
+        base = 0
+        ztop = 6000.
     else:
         base = interp.agl(interp.hght(epcl.lplvals.pbot, prof), prof)
         depth = elhght - base
@@ -51,8 +56,8 @@ def scp(prof, **kwargs):
         ptmp = interp.pres(top, prof)
         shru, shrv = winds.wind_shear(epcl.lplvals.pbot, ptmp, prof)
         shrmag = vector.mag(shru, shrv)
-    rstu, rstv = params.bunkers_storm_motion(prof, mupcl=mupcl)[:2]
-    ztop = interp.agl(interp.hght(epcl.lplvals.ptop, prof), prof)
+        ztop = interp.agl(interp.hght(epcl.lplvals.ptop, prof), prof)
+
     esrh = winds.helicity(base, ztop, prof, rstu, rstv)[0]
 
     if not QC(esrh): return RMISSD
