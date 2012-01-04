@@ -1,0 +1,65 @@
+''' Library for Composite Indices '''
+import math
+from sharppy.sharptab import *
+from sharppy.sharptab.constants import *
+
+
+__all__ = ['scp']
+
+
+def scp(prof, **kwargs):
+    '''
+    Computes the Supercell Composite Parameter; uses the effective layer
+
+    Inputs
+    ------
+
+
+    Returns
+    -------
+        supercell composite parameter   (float)
+    '''
+
+    # If MUPCL provided, use it, otherwise create MUPCL
+    if 'mupcl' in kwargs:
+        mupcl = kwargs.get('mupcl')
+    else:
+        mulplvals = params.DefineParcel(3, prof, pres=400)
+        mupcl = params.parcelx(-1, -1, mulplvals.pres, mulplvals.temp,
+            mulplvals.dwpt, prof, mulplvals.flag)
+
+    # If EPCL provided, use it, otherwise create EPCL
+    if 'epcl' in kwargs:
+        epcl = kwargs.get('epcl')
+    else:
+        elplvals = params.DefineParcel(6, prof)
+        epcl = params.parcelx(-1, -1, elplvals.pres, elplvals.temp,
+            elplvals.dwpt, prof, lplvals=elplvals)
+
+    cape = mupcl.bplus
+    elhght = mupcl.elhght
+    if not QC(cape): return RMISSD
+    if cape >= 100. and elhght < 0.:
+        base = interp.pres(interp.msl(0.), prof)
+        top = interp.pres(interp.msl(6000.), prof)
+        shru, shrv = winds.wind_shear(base, top)
+        shrmag = vector.mag(shru, shrv)
+    else:
+        base = interp.agl(interp.hght(epcl.lplvals.pbot, prof), prof)
+        depth = elhght - base
+        top = base + (depth / 2.)
+        ptmp = interp.pres(top, prof)
+        shru, shrv = winds.wind_shear(epcl.lplvals.pbot, ptmp, prof)
+        shrmag = vector.mag(shru, shrv)
+    rstu, rstv = params.bunkers_storm_motion(prof, mupcl=mupcl)[:2]
+    ztop = interp.agl(interp.hght(epcl.lplvals.ptop, prof), prof)
+    esrh = winds.helicity(base, ztop, prof, rstu, rstv)[0]
+
+    if not QC(esrh): return RMISSD
+    if shrmag < 20: eshear = 0.
+    elif shrmag > 40: eshear = 1.
+    else: eshear = shrmag / 40.
+
+    return eshear * (esrh / 50.) * (cape / 1000.)
+
+
