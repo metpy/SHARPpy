@@ -31,29 +31,29 @@ class DefineParcel(object):
         self.flag = flag
         if flag == 1:
             self.presval = kwargs.get('pres', prof.gSndg[prof.sfc])
-            self.__sfc(prof)
+            self.__sfc(prof, **kwargs)
         elif flag == 2:
             self.presval = kwargs.get('pres', 100)
-            self.__fcst(prof)
+            self.__fcst(prof, **kwargs)
         elif flag == 3:
             self.presval = kwargs.get('pres', 400)
-            self.__mu(prof)
+            self.__mu(prof, **kwargs)
         elif flag == 4:
             self.presval = kwargs.get('pres', 100)
-            self.__ml(prof)
+            self.__ml(prof, **kwargs)
         elif flag == 5:
             self.presval = kwargs.get('pres', 100)
-            self.__user(prof)
+            self.__user(prof, **kwargs)
         elif flag == 6:
             self.presval = kwargs.get('pres', 100)
-            self.__effective(prof)
+            self.__effective(prof, **kwargs)
         else:
             print 'Defaulting to Surface Parcel'
             self.presval = kwargs.get('pres', prof.gSndg[prof.sfc])
-            self.__sfc()
+            self.__sfc(prof, **kwargs)
         return
 
-    def __sfc(self, prof):
+    def __sfc(self, prof, **kwargs):
         ''' Create a parcel using surface conditions '''
         self.desc = 'Surface Parcel'
         self.temp = prof.gSndg[prof.sfc][prof.tind]
@@ -61,7 +61,7 @@ class DefineParcel(object):
         self.pres = prof.gSndg[prof.sfc][prof.pind]
         return
 
-    def __fcst(self, prof):
+    def __fcst(self, prof, **kwargs):
         ''' Create a parcel using forecast conditions '''
         self.desc = 'Forecast Surface Parcel'
         self.temp = max_temp(prof, -1)
@@ -70,7 +70,7 @@ class DefineParcel(object):
         self.pres = prof.gSndg[prof.sfc][prof.pind]
         return
 
-    def __mu(self, prof):
+    def __mu(self, prof, **kwargs):
         ''' Create the most unstable parcel within defined level '''
         self.desc = 'Most Unstable Parcel in Lowest %.2f hPa' % self.presval
         diff = prof.gSndg[prof.sfc][prof.pind] - self.presval
@@ -79,7 +79,7 @@ class DefineParcel(object):
         self.dwpt = interp.dwpt(self.pres, prof)
         return
 
-    def __ml(self, prof):
+    def __ml(self, prof, **kwargs):
         ''' Create the mixed-layer parcel; mixing over defined pressure '''
         self.desc = '%.2f hPa Mixed Layer Parcel' % self.presval
         self.pres = prof.gSndg[prof.sfc][prof.pind]
@@ -90,18 +90,19 @@ class DefineParcel(object):
         self.dwpt = thermo.temp_at_mixrat(mmr, self.pres)
         return
 
-    def __user(self, prof):
+    def __user(self, prof, **kwargs):
         ''' Create a user-defined parcel '''
         self.desc = '%.2f hPa Parcel' % self.presval
         self.pres = self.presval
-        self.temp = interp.temp(self.pres, prof)
-        self.dwpt = interp.dwpt(self.pres, prof)
+        if 'temp' in kwargs: self.temp = kwargs.get('temp')
+        else: self.temp = interp.temp(self.pres, prof)
+        if 'dwpt' in kwargs: self.dwpt = kwargs.get('dwpt')
+        else: self.dwpt = interp.dwpt(self.pres, prof)
         return
 
     def __effective(self, prof):
         ''' Create the mean-effective layer parcel '''
-        pbot, ptop = effective_inflow_layer(100, -250,
-            prof, self.flag)
+        pbot, ptop = effective_inflow_layer(100, -250, prof)
         if pbot > 0:
             self.desc = '%.2f hPa Mean Effective Layer Centered at %.2f' % (
                 pbot-ptop, (pbot+ptop)/2.)
@@ -115,12 +116,17 @@ class DefineParcel(object):
             self.pres = prof.gSndg[prof.sfc][prof.pind]
             self.temp = prof.gSndg[prof.sfc][prof.tind]
             self.dwpt = prof.gSndg[prof.sfc][prof.tdind]
+        if QC(pbot): self.pbot = pbot
+        else: self.pbot = RMISSD
+        if QC(ptop): self.ptop = ptop
+        else: self.ptop = RMISSD
         return
 
 
 class Parcel(object):
     ''' Initialize variables for a parcel '''
-    def __init__(self, lower, upper, pres, temp, dwpt, missing=RMISSD):
+    def __init__(self, lower, upper, pres, temp, dwpt, missing=RMISSD,
+        **kwargs):
         self.pres = pres
         self.temp = temp
         self.dwpt = dwpt
@@ -152,6 +158,7 @@ class Parcel(object):
         self.limaxpres = RMISSD
         self.cap = RMISSD
         self.cappres = RMISSD
+        for kw in kwargs: setattr(self, kw, kwargs.get(kw))
         return
 
 
@@ -280,7 +287,7 @@ def precip_water(lower, upper, prof):
     return pwat * 0.00040173
 
 
-def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
+def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
     '''
     Lifts the specified parcel, calculated various levels and parameters from
     the profile object. B+/B- are calculated based on the specified layer.
@@ -294,7 +301,6 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
         pres        (float)                 Pressure of parcel to lift (hPa)
         temp        (float)                 Temperature of parcel to lift (C)
         dwpt        (float)                 Dew Point of parcel to lift (C)
-        flag        (int)                   Parcel flag
         prof        (profile object)        Profile Object
 
     Returns
@@ -302,6 +308,11 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
         pcl         (parcel object)         Parcel Object
     '''
     pcl = Parcel(-1, -1, pres, temp, dwpt)
+    if 'lplvals' in kwargs: pcl.lplvals = kwargs.get('lplvals')
+    else:
+        lplvals = DefineParcel(prof, 5, pres=pres, temp=temp, dwpt=dwpt)
+        pcl.lplvals = lplvals
+
     if prof.gNumLevels < 1: return pcl
 
     lyre = -1
@@ -676,7 +687,7 @@ def parcelx(lower, upper, pres, temp, dwpt, flag, prof):
             pcl.li3 = a - thermo.virtemp(300, b, b)
 
     # Calculate BRN if available
-    pcl = bulk_rich(pcl, flag, prof)
+    pcl = bulk_rich(pcl, prof)
 
     pcl.bminus = cinh_old
     if pcl.bplus == 0: pcl.bminus = 0.
@@ -711,14 +722,13 @@ def temp_lvl(temp, prof):
     return RMISSD
 
 
-def bulk_rich(pcl, flag, prof):
+def bulk_rich(pcl, prof):
     '''
     Calculates the Bulk Richardson Number for a given parcel.
 
     Inputs
     ------
         pcl         (parcel object)         Parcel Object
-        flag        (int)                   Parcel Flag
         prof        (profile object)        Profile Object
 
     Returns
@@ -726,9 +736,9 @@ def bulk_rich(pcl, flag, prof):
         Bulk Richardson Number
     '''
     # Make sure parcel is initialized
-    if flag == RMISSD:
+    if pcl.lplvals.flag == RMISSD:
         pbot = RMISSD
-    elif flag > 0 and flag < 4:
+    elif pcl.lplvals.flag > 0 and pcl.lplvals.flag < 4:
         ptop = interp.pres(interp.msl(6000., prof), prof)
         pbot = prof.gSndg[prof.sfc][prof.pind]
     else:
@@ -977,7 +987,7 @@ def unstable_level(prof, lower, upper):
     return pmax
 
 
-def effective_inflow_layer(ecape, ecinh, prof, flag):
+def effective_inflow_layer(ecape, ecinh, prof, **kwargs):
     '''
     Calculates the top and bottom of the effective inflow layer based on
     research by Thompson et al. (2004)
@@ -987,26 +997,28 @@ def effective_inflow_layer(ecape, ecinh, prof, flag):
         ecape       (float)                 CAPE Threshold
         ecinh       (float)                 CINH Threshold
         prof        (profile object)        Profile Object
-        flag        (int)                   Parcel Flag
     Returns
     -------
         pbot        (float)                 Pressure at bottom level (hPa)
         ptop        (float)                 Pressure at top level (hPa)
     '''
-    mulplvals = DefineParcel(prof, 3, pres=400)
-    mupcl = parcelx(-1, -1, mulplvals.pres, mulplvals.temp, mulplvals.dwpt,
-        mulplvals.flag, prof)
+    if 'mupcl' in kwargs:
+        mupcl = kwargs.get('mupcl')
+    else:
+        mulplvals = DefineParcel(prof, 3, pres=400)
+        mupcl = parcelx(-1, -1, mulplvals.pres, mulplvals.temp,
+            mulplvals.dwpt, prof, lplvals=mulplvals)
     mucape = mupcl.bplus
     mucinh = mupcl.bminus
 
     # Scenario where shallow buoyancy present for
     # parcel with lesser theta near the ground
-    mulplvals = DefineParcel(prof, 3, pres=300)
-    mupcl = parcelx(-1, -1, mulplvals.pres, mulplvals.temp, mulplvals.dwpt,
-        mulplvals.flag, prof)
-    if mupcl.bplus > mucape:
-        mucape = mupcl.bplus
-        mucinh = mupcl.bminus
+    mu2lplvals = DefineParcel(prof, 3, pres=300)
+    mu2pcl = parcelx(-1, -1, mulplvals.pres, mulplvals.temp, mulplvals.dwpt,
+        prof, lplvals=mu2lplvals)
+    if mu2pcl.bplus > mucape:
+        mucape = mu2pcl.bplus
+        mucinh = mu2pcl.bminus
 
     pbot = RMISSD
     ptop = RMISSD
@@ -1015,8 +1027,7 @@ def effective_inflow_layer(ecape, ecinh, prof, flag):
         # Begin at surface and search upward for effective surface
         for i in range(prof.sfc, prof.gNumLevels-1):
             pcl = parcelx(-1, -1, prof.gSndg[i][prof.pind],
-                prof.gSndg[i][prof.tind], prof.gSndg[i][prof.tdind],
-                flag, prof)
+                prof.gSndg[i][prof.tind], prof.gSndg[i][prof.tdind], prof)
             if pcl.bplus >= ecape and pcl.bminus >= ecinh:
                 pbot = prof.gSndg[i][prof.pind]
                 break
@@ -1025,8 +1036,7 @@ def effective_inflow_layer(ecape, ecinh, prof, flag):
         # Keep searching upward for the effective top
         for i in range(bptr+1, prof.gNumLevels-1):
             pcl = parcelx(-1, -1, prof.gSndg[i][prof.pind],
-                prof.gSndg[i][prof.tind], prof.gSndg[i][prof.tdind],
-                flag, prof)
+                prof.gSndg[i][prof.tind], prof.gSndg[i][prof.tdind], prof)
             if pcl.bplus <= ecape or pcl.bminus <= ecinh:
                 j = 1
                 while not QC(prof.gSndg[i-j][prof.tind]) and \
@@ -1038,7 +1048,7 @@ def effective_inflow_layer(ecape, ecinh, prof, flag):
     return pbot, ptop
 
 
-def bunkers_storm_motion(prof, pbot=None):
+def bunkers_storm_motion(prof, pbot=None, **kwargs):
     '''
     Compute the Bunkers Storm Motion for a Right Moving Supercell using
     a parcel based approach.
@@ -1055,17 +1065,21 @@ def bunkers_storm_motion(prof, pbot=None):
         lstu        (float)             Left Storm Motion U-component
         lstv        (float)             Left Storm Motion V-component
     '''
-    d = MS2KTS(7.5)         # Deviation value emperically derived as 7.5 m/s
-    mulplvals = DefineParcel(prof, 3, pres=400)
-    mupcl = parcelx(-1, -1, mulplvals.pres, mulplvals.temp, mulplvals.dwpt,
-        mulplvals.flag, prof)
+    d = MS2KTS(7.5)     # Deviation value emperically derived as 7.5 m/s
+
+    # If MUPCL provided, use it, otherwise create MUPCL
+    if 'mupcl' in kwargs:
+        mupcl = kwargs.get('mupcl')
+    else:
+        mulplvals = params.DefineParcel(3, prof, pres=400)
+        mupcl = params.parcelx(-1, -1, mulplvals.pres, mulplvals.temp,
+            mulplvals.dwpt, prof, lplvals=mulplvals)
+
     mucape = mupcl.bplus
     mucinh = mupcl.bminus
     muel = mupcl.elhght
-
     if not pbot:
-        pbot, ptop = effective_inflow_layer(100, -250, prof, 5)
-
+        pbot, ptop = effective_inflow_layer(100, -250, prof)
     base = interp.agl(interp.hght(pbot, prof), prof)
     if mucape > 100. and QC(muel) and base >= 750:
         depth = el - base
@@ -1108,17 +1122,17 @@ def convective_temp(prof, mincinh=-1.):
 
     # Do a quick search to find wheather to continue. If
     # If you need to heat up more than 25C, don't compute.
-    pcl = parcelx(-1, -1, sfcpres, sfctemp+25., sfcdwpt, 5, prof)
+    pcl = parcelx(-1, -1, sfcpres, sfctemp+25., sfcdwpt, prof)
     if pcl.bplus == 0. or pcl.bminus < mincinh: return RMISSD
 
     excess = sfcdwpt - sfctemp
     if excess > 0: sfctemp = sfctemp + excess + 4.
-    pcl = parcelx(-1, -1, sfcpres, sfctemp, sfcdwpt, 5, prof)
+    pcl = parcelx(-1, -1, sfcpres, sfctemp, sfcdwpt, prof)
     if pcl.bplus == 0.: pcl.bminus = RMISSD
     while pcl.bminus < mincinh:
         if pcl.bminus < -100.: sfctemp += 2.
         else: sfctemp += 0.5
-        pcl = parcelx(-1, -1, sfcpres, sfctemp, sfcdwpt, 5, prof)
+        pcl = parcelx(-1, -1, sfcpres, sfctemp, sfcdwpt, prof)
         if pcl.bplus == 0.: pcl.bminus = RMISSD
 
     return sfctemp
@@ -1141,7 +1155,7 @@ def esfc(prof, val=50.):
     for i in range(prof.sfc, prof.gNumLevels):
         if prof.gSndg[prof.sfc][prof.pind] < 500.: break
         pcl = parcelx(-1, -1, prof.gSndg[i][prof.pind],
-            prof.gSndg[i][prof.tind], prof.gSndg[i][prof.tdind], prof, 5)
+            prof.gSndg[i][prof.tind], prof.gSndg[i][prof.tdind], prof)
         if pcl.bplus >= val: return prof.gSndg[i][prof.pind]
     return RMISSD
 
