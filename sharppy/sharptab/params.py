@@ -407,6 +407,9 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
     hgt0c = interp.hght(p0c, prof)
     hgtm10c = interp.hght(pm10c, prof)
     hgtm30c = interp.hght(pm30c, prof)
+    pcl.p0c = p0c
+    pcl.pm10c = pm10c
+    pcl.pm30c = pm30c
     pcl.hght0c = hgt0c
     pcl.hghtm10c = hgtm10c
     pcl.hghtm30c = hgtm30c
