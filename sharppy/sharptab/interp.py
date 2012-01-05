@@ -112,7 +112,7 @@ def components(p, prof):
     return U, V
 
 
-def vec(p, U, V):
+def vec(p, prof):
     '''
     Interpolates the given component data to a given pressure level
     and returns the interpolated direction and speed
@@ -120,16 +120,15 @@ def vec(p, U, V):
     Inputs
     ------
         p           (float)                 Pressure (hPa) of a level
-        U           (list of floats)        U-components
-        V           (list of floats)        V-components
+        prof        (profile object)        Profile object
 
     Returns
     -------
         dir         (float)                 Direction
         mag         (float)                 Magnitude
     '''
-    u = interp_from_pres(p, U)
-    v = interp_from_pres(p, V)
+    u = interp_from_pres(p, prof, prof.uind)
+    v = interp_from_pres(p, prof, prof.vind)
     return vector.comp2vec(u, v)
 
 
