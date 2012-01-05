@@ -13,7 +13,7 @@ def scp(prof, **kwargs):
 
     Inputs
     ------
-
+        prof    (profile object)        Profile Object
 
     Returns
     -------
