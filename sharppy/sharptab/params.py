@@ -511,7 +511,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             lyrf = lyre
             if lyrf > 0.: pcl.bfzl = totp - lyrf
             else: pcl.bfzl = totp
-            if p0c > pe3:
+            if not QC(p0c) or p0c > pe3:
                 pcl.bfzl = 0
             elif QC(pe2):
                 te2 = interp.vtmp(pe2, prof)
@@ -532,7 +532,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             lyrf = lyre
             if lyrf > 0.: pcl.wm10c = totp - lyrf
             else: pcl.wm10c = totp
-            if pm10c > pe3:
+            if not QC(pm10c) or pm10c > pe3:
                 pcl.wm10c = 0
             elif QC(pe2):
                 te2 = interp.vtmp(pe2, prof)
@@ -553,7 +553,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             lyrf = lyre
             if lyrf > 0.: pcl.wm30c = totp - lyrf
             else: pcl.wm30c = totp
-            if pm30c > pe3:
+            if not QC(pm30c) or pm30c > pe3:
                 pcl.wm30c = 0
             elif QC(pe2):
                 te2 = interp.vtmp(pe2, prof)
@@ -1085,12 +1085,12 @@ def bunkers_storm_motion(prof, pbot=None, **kwargs):
         pbot, ptop = effective_inflow_layer(100, -250, prof)
     base = interp.agl(interp.hght(pbot, prof), prof)
     if mucape > 100. and QC(muel) and base >= 750:
-        depth = el - base
+        depth = muel - base
         htop = base + depth / 2.
         ptop = interp.pres(interp.msl(base + htop, prof), prof)
         mnu, mnv = winds.mean_wind_npw(pbot, ptop, prof)
         sru, srv = winds.wind_shear(pbot, ptop, prof)
-        srmag = vector.mag(srud, srvd)
+        srmag = vector.mag(sru, srv)
         uchg = d / srmag * srv
         vchg = d / srmag * sru
         rstu = mnu + uchg
