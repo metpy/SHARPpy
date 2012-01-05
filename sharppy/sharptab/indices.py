@@ -65,6 +65,7 @@ def scp(prof, **kwargs):
     elif shrmag > 40: eshear = 1.
     else: eshear = shrmag / 40.
 
-    return eshear * (esrh / 50.) * (cape / 1000.)
-
+    scp = eshear * (esrh / 50.) * (cape / 1000.)
+    if scp <= 0: scp = 0
+    return scp
 
