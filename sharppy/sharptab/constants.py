@@ -1,6 +1,6 @@
 ''' Frequently used constants '''
 
-consts = ["RMISSD", "ROCP", "ZEROCNK", "G"]
+consts = ["RMISSD", "ROCP", "ZEROCNK", "G", "TOL"]
 funcs = ['MS2KTS', 'KTS2MS', 'M2FT', 'FT2M', 'QC']
 __all__ = consts + funcs
 
@@ -10,6 +10,7 @@ RMISSD = -9999.0            # Missing Flag
 ROCP = 0.28571426           # R divided by Cp
 ZEROCNK = 273.15            # Zero Celsius in Kelvins
 G = 9.80665                 # Earth's Gravity
+TOL = 1e-8                  # Floating Point Tolerance
 
 
 
