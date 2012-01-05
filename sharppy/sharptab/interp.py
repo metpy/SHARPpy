@@ -148,6 +148,7 @@ def interp_from_hght(h, prof, ind):
     -------
         Interpolated variable
     '''
+    if not QC(h): return RMISSD
     tptr = -1
     bptr = 0
     for i in range(prof.gNumLevels):
@@ -179,6 +180,7 @@ def interp_from_pres(p, prof, ind):
     -------
         Interpolated variable
     '''
+    if not QC(p): return RMISSD
     tptr = -1
     bptr = 0
     for i in range(prof.gNumLevels):
