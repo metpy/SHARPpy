@@ -154,7 +154,7 @@ def interp_from_hght(h, prof, ind):
         if not QC(prof.gSndg[i][ind]): continue
         if prof.gSndg[i][prof.zind] < h:
             bptr = i
-        elif prof.gSndg[i][prof.zind] == h:
+        elif math.fabs(h - prof.gSndg[i][prof.zind]) < TOL:
             return prof.gSndg[i][ind]
         else:
             tptr = i
@@ -186,7 +186,7 @@ def interp_from_pres(p, prof, ind):
         if not QC(prof.gSndg[i][ind]): continue
         if prof.gSndg[i][prof.pind] > p:
             bptr = i
-        elif prof.gSndg[i][prof.pind] == p:
+        elif math.fabs(p - prof.gSndg[i][prof.pind]) < TOL:
             return prof.gSndg[i][ind]
         else:
             tptr = i
