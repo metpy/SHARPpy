@@ -146,10 +146,16 @@ class Parcel(object):
         self.bfzl = RMISSD
         self.b3km = RMISSD
         self.b6km = RMISSD
+        self.p0c = RMISSD
+        self.pm10c = RMISSD
+        self.pm20c = RMISSD
+        self.pm30c = RMISSD
         self.hght0c = RMISSD
-        self.hght10c = RMISSD
-        self.hght30c = RMISSD
+        self.hghtm10c = RMISSD
+        self.hghtm20c = RMISSD
+        self.hghtm30c = RMISSD
         self.wm10c = RMISSD
+        self.wm20c = RMISSD
         self.wm30c = RMISSD
         self.li5 = RMISSD
         self.li3 = RMISSD
@@ -403,15 +409,19 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
     # Calculate height of various temperature levels
     p0c = temp_lvl(0., prof)
     pm10c = temp_lvl(-10., prof)
+    pm20c = temp_lvl(-20., prof)
     pm30c = temp_lvl(-30., prof)
     hgt0c = interp.hght(p0c, prof)
     hgtm10c = interp.hght(pm10c, prof)
+    hgtm20c = interp.hght(pm20c, prof)
     hgtm30c = interp.hght(pm30c, prof)
     pcl.p0c = p0c
     pcl.pm10c = pm10c
+    pcl.pm20c = pm20c
     pcl.pm30c = pm30c
     pcl.hght0c = hgt0c
     pcl.hghtm10c = hgtm10c
+    pcl.hghtm20c = hgtm20c
     pcl.hghtm30c = hgtm30c
 
     # Find lowest observation in layer
@@ -535,7 +545,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             lyrf = lyre
             if lyrf > 0.: pcl.wm10c = totp - lyrf
             else: pcl.wm10c = totp
-            if not QC(pm10c) or pm10c > pe3:
+            if not QC(pm10c) or pm10c > pcl.lclpres:
                 pcl.wm10c = 0
             elif QC(pe2):
                 te2 = interp.vtmp(pe2, prof)
@@ -547,6 +557,27 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
                 lyrf = G * (tdef3 + tdef2) / 2. * (hgtm10c - h3)
                 if lyrf > 0: pcl.wm10c += lyrf
 
+        # Is this the -20C level
+        if te2 < -20. and not QC(pcl.wm20c):
+            pe3 = pelast
+            h3 = interp.hght(pe3, prof)
+            te3 = interp.vtmp(pe3, prof)
+            tp3 = thermo.wetlift(pe1, tp1, pe3)
+            lyrf = lyre
+            if lyrf > 0.: pcl.wm20c = totp - lyrf
+            else: pcl.wm20c = totp
+            if not QC(pm20c) or pm20c > pcl.lclpres:
+                pcl.wm20c = 0
+            elif QC(pe2):
+                te2 = interp.vtmp(pe2, prof)
+                tp2 = thermo.wetlift(pe3, tp3, pe2)
+                tdef3 = (thermo.virtemp(pe3, tp3, tp3) - te3) / \
+                    thermo.ctok(te3)
+                tdef2 = (thermo.virtemp(pe2, tp2, tp2) - te2) / \
+                    thermo.ctok(te2)
+                lyrf = G * (tdef3 + tdef2) / 2. * (hgtm20c - h3)
+                if lyrf > 0: pcl.wm20c += lyrf
+
         # Is this the -30C level
         if te2 < -30. and not QC(pcl.wm30c):
             pe3 = pelast
@@ -556,7 +587,7 @@ def parcelx(lower, upper, pres, temp, dwpt, prof, **kwargs):
             lyrf = lyre
             if lyrf > 0.: pcl.wm30c = totp - lyrf
             else: pcl.wm30c = totp
-            if not QC(pm30c) or pm30c > pe3:
+            if not QC(pm30c) or pm30c > pcl.lclpres:
                 pcl.wm30c = 0
             elif QC(pe2):
                 te2 = interp.vtmp(pe2, prof)
