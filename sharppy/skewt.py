@@ -31,8 +31,8 @@ class SkewT:
         self.pmax = 1075.
 
         # Drawing Parameters
-        self.bltemp = -50       # temperature at the bottom-left of the chart
-        self.brtemp = 60        # temperature at the bottom-right of the chart
+        self.bltemp = -55       # temperature at the bottom-left of the chart
+        self.brtemp = 55        # temperature at the bottom-right of the chart
 
         # Rotation Angle in Degrees
         self.rot = 100/3.
