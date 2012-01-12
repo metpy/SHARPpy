@@ -1,11 +1,11 @@
-from Tkinter import Canvas
-import tkFont
 import math
+import sharppy as sp
 import sharppy.sharptab as tab
 from sharppy.sharptab.constants import *
 
 
 __all__ = ['SkewT']
+
 
 class SkewT:
 
@@ -13,7 +13,7 @@ class SkewT:
         self.gCanvas = canvas
 
         # Canvas Widths
-        self.rpad = 30
+        self.rpad = 100
         self.bpad = 20
         self.wid = kwargs.get('width', 800) - self.rpad
         self.hgt = kwargs.get('height', 800) - self.bpad
@@ -34,17 +34,8 @@ class SkewT:
         self.bltemp = -50       # temperature at the bottom-left of the chart
         self.brtemp = 60        # temperature at the bottom-right of the chart
 
-        # Horizontal temperature spread (dT across the bottom of the chart)
-        self.hspread = self.brtemp - self.bltemp
-
         # Rotation Angle in Degrees
         self.rot = 100/3.
-
-        # Vertical temperature spread (dT along the left edge of the chart)
-        self.vspread = math.tan(math.radians(self.rot)) * self.hspread
-
-        # (un-implemented option) Draw a skew-t or other thermodynamic diagram.
-        self.type = 1
 
         # SkewT Fonts
         self.font1 = ("Helvetica", 9)
@@ -54,22 +45,23 @@ class SkewT:
         # Colors
         self.framefg = "#FFFFFF"
         self.framebg = "#000000"
-        self.icolor = "#FFFFFF"         # Isobar
+        self.icolor = "#BBBBBB"         # Isobar
         self.tcolor = "#FF0000"         # Temperature Trace
         self.tdcolor = "#00FF00"        # Dewpoint  Trace
         self.twcolor = "#AAAAFF"        # Wetbulb Temperature Trace
         self.tpcolor = "#AAAA00"        # Parcel Trace
         self.tvpcolor = "#FFFF00"       # Virtual Parcel
-        self.ithermcolor = "#666666"    # Isotherms
-        self.ithermbold = "#FFFFFF"     # Bolded Isotherms
-        self.adiabatcolor = "#666666"   # Dry Adiabat
-        self.madiabatcolor = "#553333"  # Moist Adiabat
-        self.mixratcolor = "#009900"    # Mixing Ratio
+        self.ithermcolor = "#333333"    # Isotherms
+        self.ithermbold = "#CCCCCC"     # Bolded Isotherms
+        self.adiabatcolor = "#333333"   # Dry Adiabat
+        self.madiabatcolor = "#663333"  # Moist Adiabat
+        self.mixratcolor = "#006600"    # Mixing Ratio
         self.stntextcolor = "#FF0000"   # Station ID Text
         self.tcolor = "#FF0000"         # Temperature Trace
         self.tdcolor = "#00FF00"        # Dew Point Trace
-        self.wcolor = "#AAAAFF"         # Wetbulb Trace
-        self.dgzcolor = "#0000FF"       # DGZ Trace Color
+        self.twcolor = "#AAAAFF"        # Wetbulb Trace
+        self.dgzcolor = "#00FFFF"       # DGZ Trace Color
+        self.barbcolor = '#FFFFFF'      # Wind Barb Color
 
         # Lines to Plot
         self.dp = -25
@@ -83,6 +75,16 @@ class SkewT:
         self.wtop = 600                     # Mixing Ratio Top Pressure
         self.minTdgz = -18                  # Minimum temperature of DGZ
         self.maxTdgz = -12                  # Maximum temperature of DGZ
+        self.tracewidth = 4                 # Tracewidth
+
+        # Update All Keyword Arguments
+        self.__dict__.update(kwargs)
+
+        # Horizontal temperature spread (dT across the bottom of the chart)
+        self.hspread = self.brtemp - self.bltemp
+
+        # Vertical temperature spread (dT along the left edge of the chart)
+        self.vspread = math.tan(math.radians(self.rot)) * self.hspread
 
 
     def drawSkewT(self):
@@ -101,79 +103,120 @@ class SkewT:
             self.bry), fill=self.framebg, outline=self.framebg)
         self.gCanvas.create_rectangle((self.brx, 0, self.wid+self.rpad,
             self.pres2Pix(self.pmax)), fill=self.framebg, outline=self.framebg)
+        for isobar in self.isobars: self.drawIsobar(isobar, 0)
 
         # Plot frame around SkewT
         self.gCanvas.create_rectangle((self.tlx, self.tly, self.brx, self.bry),
             fill="", outline=self.framefg)
 
-        for isobar in self.isobars: self.drawIsobar(isobar, 0)
 
-
-    def drawProfile(self, profile):
+    def drawProfile(self, prof, **kwargs):
         ''' Draw the Sounding '''
-        txt = profile.gStation + " - " + profile.gDate
+        # Create the Sounding ID and Date/Time Header
+        txt = prof.gStation + "  -  " + prof.gDate
         self.gCanvas.create_text(self.tlx, 2, fill=self.stntextcolor,
             text=txt, anchor='nw', font=self.font2)
-        profile = self.createWetBulb(profile)
-        self.drawTrace(profile, -1, self.wcolor, 1, font=self.font3)
-        self.drawTrace(profile, 3, self.tdcolor, 3, font=self.font3)
-        self.drawTrace(profile, 2, self.tcolor, 3, font=self.font3)
-        self.drawDGZ(profile, 2, 3, self.dgzcolor, 2)
+
+        # Create the Model/Obs Header
+        self.gCanvas.create_text(self.wid-150, 2, fill=self.stntextcolor,
+            text=prof.gModel, anchor='nw', font=self.font2)
+
+        # Add WetBulb to Profile
+        prof = self.createWetBulb(prof)
+
+        # Make the Drawings
+        twwidth = kwargs.get('twwidth', 1)
+        plottxt = kwargs.get('plottxt', True)
+        self.__dict__.update(kwargs)
+        self.drawTrace(prof, -1, color=self.twcolor, width=twwidth,
+            plottxt=plottxt)
+        self.drawTrace(prof, prof.tdind, self.tdcolor, width=self.tracewidth,
+            plottxt=plottxt)
+        self.drawTrace(prof, prof.tind, self.tcolor, width=self.tracewidth,
+            plottxt=plottxt)
+        self.drawDGZ(prof, self.dgzcolor, width=self.tracewidth)
 
 
-    def drawDGZ(self, profile, tind, tdind, color, width):
+    def drawBarbs(self, prof, color=None, **kwargs):
+        ''' Draw the Wind Barbs '''
+        if not color: color = self.barbcolor
+        self.plevs = [prof.gSndg[prof.sfc][prof.pind]] + self.presrange
+        self.__dict__.update(kwargs)
+
+        if not self.plevs:
+            self.plevs = [prof.gSndg[i][prof.sfc]
+                for i in range(prof.gNumLevels)]
+
+        for p in self.plevs:
+            if p < self.pmin or p > self.pmax or \
+                p > prof.gSndg[prof.sfc][prof.pind]: continue
+            u, v = tab.interp.components(p, prof)
+            y1 = self.pres2Pix(p)
+            x1 = self.brx + self.rpad/2
+            wdir, wspd = tab.vector.comp2vec(u, v)
+            sp.Barb(self.gCanvas, x1, y1, wdir, wspd, color=color,
+                **kwargs)
+
+
+    def drawDGZ(self, prof, color=None, width=3):
         ''' Draw the Dendritic Snow Growth Zone '''
-        if profile.gNumLevels < 3: return
-        for i in range(profile.gNumLevels-1):
-            if not QC(profile.gSndg[i][tind]): continue
-            if profile.gSndg[i][tind] <= self.maxTdgz and \
-               profile.gSndg[i][tind] >= self.minTdgz and \
-               profile.gSndg[i+1][tind] <= self.maxTdgz and \
-               profile.gSndg[i+1][tind] >= self.minTdgz:
-                rh = tab.thermo.relh(profile.gSndg[i][0],
-                    profile.gSndg[i][tind], profile.gSndg[i][tdind])
+        if not color: color=self.dgzcolor
+        if prof.gNumLevels < 3: return
+        for i in range(prof.gNumLevels-1):
+            if not QC(prof.gSndg[i][prof.tind]): continue
+            if prof.gSndg[i][prof.tind] <= self.maxTdgz and \
+               prof.gSndg[i][prof.tind] >= self.minTdgz and \
+               prof.gSndg[i+1][prof.tind] <= self.maxTdgz and \
+               prof.gSndg[i+1][prof.tind] >= self.minTdgz:
+                rh = tab.thermo.relh(prof.gSndg[i][prof.pind],
+                    prof.gSndg[i][prof.tind], prof.gSndg[i][prof.tdind])
                 if rh >= 75:
-                    rh2 = tab.thermo.relh(profile.gSndg[i+1][0],
-                        profile.gSndg[i+1][tind], profile.gSndg[i+1][tdind])
+                    rh2 = tab.thermo.relh(prof.gSndg[i+1][prof.pind],
+                        prof.gSndg[i+1][prof.tind],
+                        prof.gSndg[i+1][prof.tdind])
                     if rh2 >= 75:
-                        x1 = self.temp2Pix(profile.gSndg[i][tind],
-                            profile.gSndg[i][0])
-                        y1 = self.pres2Pix(profile.gSndg[i][0])
-                        x2 = self.temp2Pix(profile.gSndg[i+1][tind],
-                            profile.gSndg[i+1][0])
-                        y2 = self.pres2Pix(profile.gSndg[i+1][0])
+                        x1 = self.temp2Pix(prof.gSndg[i][prof.tind],
+                            prof.gSndg[i][prof.pind])
+                        y1 = self.pres2Pix(prof.gSndg[i][prof.pind])
+                        x2 = self.temp2Pix(prof.gSndg[i+1][prof.tind],
+                            prof.gSndg[i+1][prof.pind])
+                        y2 = self.pres2Pix(prof.gSndg[i+1][prof.pind])
                         self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
                             width=width)
 
 
-    def drawTrace(self, profile, ind, color, width, font):
+    def drawTrace(self, prof, ind, color, **kwargs):
         ''' Draw the Temperature Trace on the Sounding '''
-        if profile.gNumLevels < 3: return
-        x1 = self.temp2Pix(profile.gSndg[profile.sfc][ind],
-            profile.gSndg[profile.sfc][0])
-        y1 = self.pres2Pix(profile.gSndg[profile.sfc][0])
-        txt = "%.1f" % tab.thermo.ctof(profile.gSndg[profile.sfc][ind])
+        font = kwargs.get('font', self.font3)
+        width = kwargs.get('width', 4)
+        plottxt = kwargs.get('plottxt', True)
+        if prof.gNumLevels < 3: return
+        x1 = self.temp2Pix(prof.gSndg[prof.sfc][ind],
+            prof.gSndg[prof.sfc][prof.pind])
+        y1 = self.pres2Pix(prof.gSndg[prof.sfc][prof.pind])
+        txt = "%.1f" % tab.thermo.ctof(prof.gSndg[prof.sfc][ind])
         xoff = int((float(len(txt)) / 2.) * font[1]) - 1
         yoff = font[1]
-        x2 = 0
-        y2 = 0
-        self.gCanvas.create_rectangle((x1-xoff, y1, x1+xoff, y1+2*yoff),
-            fill=self.framebg)
-        self.gCanvas.create_text(x1, y1+yoff, fill=color, text=txt,
-            font=font)
+        x2 = 0; y2 = 0
+        if plottxt:
+            self.gCanvas.create_rectangle((x1-xoff, y1, x1+xoff, y1+2*yoff),
+                fill=self.framebg)
+            self.gCanvas.create_text(x1, y1+yoff, fill=color, text=txt,
+                font=font)
 
-        for i in range(profile.gNumLevels):
-            if QC(profile.gSndg[i][ind]):
+        for i in range(prof.gNumLevels):
+            if QC(prof.gSndg[i][ind]):
                 x1 = x2
                 y1 = y2
-                if profile.gSndg[i][0] > self.pmin:
-                    x2 = self.temp2Pix(profile.gSndg[i][ind], profile.gSndg[i][0])
-                    y2 = self.pres2Pix(profile.gSndg[i][0])
+                if prof.gSndg[i][0] > self.pmin:
+                    x2 = self.temp2Pix(prof.gSndg[i][ind],
+                        prof.gSndg[i][prof.pind])
+                    y2 = self.pres2Pix(prof.gSndg[i][prof.pind])
                     if x1 <= 0: continue
                     self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
                         width=width)
                 else:
-                    v = tab.interp.interp_from_pres(self.pmin, profile, ind)
+                    v = tab.interp.interp_from_pres(self.pmin, prof, ind)
                     x2 = self.temp2Pix(v, self.pmin)
                     y2 = self.pres2Pix(self.pmin)
                     self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
@@ -181,8 +224,9 @@ class SkewT:
                     break
 
 
-    def drawParcelTrace(self, pcl):
+    def drawParcelTrace(self, pcl, width=2, dash=(1,1), color=None):
         ''' Draw the trace of supplied parcel '''
+        if not color: self.tpcolor
         p = pcl.pres
         t = pcl.temp
         td = pcl.dwpt
@@ -191,8 +235,8 @@ class SkewT:
         p2, t2 = tab.thermo.drylift(p, t, td)
         x2 = self.temp2Pix(t2, p2)
         y2 = self.pres2Pix(p2)
-        self.gCanvas.create_line(x1, y1, x2, y2, fill=self.tpcolor,
-            width=2, dash=(1,1))
+        self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
+            width=width, dash=dash)
 
         for i in range(int(p2 + self.dp), int(self.pmin-1), int(self.dp)):
             x1 = x2
@@ -201,13 +245,13 @@ class SkewT:
             x2 = self.temp2Pix(t3, float(i))
             y2 = self.pres2Pix(float(i))
             if x2 < self.tlx: break
-            self.gCanvas.create_line(x1, y1, x2, y2, fill=self.tpcolor,
-                width=2, dash=(1,1))
+            self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
+                width=width, dash=dash)
 
 
-    def drawVirtualParcelTrace(self, pcl, **kwargs):
+    def drawVirtualParcelTrace(self, pcl, width=2, dash=(1,1), color=None):
         ''' Draw the trace of supplied parcel '''
-        color = kwargs.get('color', self.tvpcolor)
+        if not color: color = self.tvpcolor
         p = pcl.pres
         t = pcl.temp
         td = pcl.dwpt
@@ -217,7 +261,7 @@ class SkewT:
         x2 = self.temp2Pix(tab.thermo.virtemp(p2, t2, t2), p2)
         y2 = self.pres2Pix(p2)
         self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
-            width=2, dash=(1,1))
+            width=width, dash=dash)
 
         for i in range(int(p2 + self.dp), int(self.pmin-1), int(self.dp)):
             x1 = x2
@@ -227,7 +271,7 @@ class SkewT:
             y2 = self.pres2Pix(float(i))
             if x2 < self.tlx: break
             self.gCanvas.create_line(x1, y1, x2, y2, fill=color,
-                width=2, dash=(1,1))
+                width=width, dash=dash)
 
 
     def drawDryAdiabat(self, thta):
@@ -262,7 +306,7 @@ class SkewT:
                 fill=self.ithermbold, dash=(4, 2), width=1)
 
 
-    def drawMoistAdiabat(self, tw):
+    def drawMoistAdiabat(self, tw, width=1):
         ''' Draw moist adiabats on background SkewT '''
         for p in self.presrange:
             t = tab.thermo.wetlift(1000., tw, p)
@@ -277,25 +321,25 @@ class SkewT:
                 x2 = x
                 y2 = y
                 self.gCanvas.create_line(x1, y1, x2, y2,
-                    fill=self.madiabatcolor, width=1)
+                    fill=self.madiabatcolor, width=width)
 
 
-    def drawIsobar(self, p, pipflag):
+    def drawIsobar(self, p, pipflag, width=1):
         ''' Draw isobars on background SkewT '''
         y1 = self.pres2Pix(p)
         if pipflag == 0:
             self.gCanvas.create_line(self.tlx, y1, self.brx, y1,
-                fill=self.icolor, width=1)
+                fill=self.icolor, width=width)
             self.gCanvas.create_text(self.tlx-2, y1,
-                fill=self.icolor, text=p, anchor="e", font=self.font1)
+                fill=self.framefg, text=p, anchor="e", font=self.font1)
         else:
             self.gCanvas.create_line(self.tlx, y1, self.tlx+5, y1,
-                fill=self.icolor, width=1)
+                fill=self.icolor, width=width)
             self.gCanvas.create_line(self.brx, y1, self.brx-5, y1,
-                fill=self.icolor, width=1)
+                fill=self.icolor, width=width)
 
 
-    def drawMixRatioLine(self, w, font):
+    def drawMixRatioLine(self, w, font, width=1):
         ''' Function to draw mixing ratio lines '''
         t = tab.thermo.temp_at_mixrat(w, self.wbot)
         x1 = self.temp2Pix(t, self.wbot)
@@ -304,7 +348,7 @@ class SkewT:
         x2 = self.temp2Pix(t, self.wtop)
         y2 = self.pres2Pix(self.wtop)
         self.gCanvas.create_line(x1, y1, x2, y2, fill=self.mixratcolor,
-            width=1)
+            width=width)
 
         self.gCanvas.create_rectangle((x2-font[1], y2-2*font[1],
             x2+font[1], y2), fill=self.framebg,
@@ -314,21 +358,18 @@ class SkewT:
             text=w, font=font)
 
 
-    def createWetBulb(self, profile):
+    def createWetBulb(self, prof):
         ''' Create the Wetbulb Temperature Array '''
-        for i in range(profile.gNumLevels):
-            profile.gSndg[i].append(tab.thermo.wetbulb(profile.gSndg[i][0],
-                profile.gSndg[i][2], profile.gSndg[i][3]))
-        return profile
+        for i in range(prof.gNumLevels):
+            prof.gSndg[i].append(tab.thermo.wetbulb(prof.gSndg[i][prof.pind],
+                prof.gSndg[i][prof.tind], prof.gSndg[i][prof.tdind]))
+        return prof
 
 
     def temp2Pix(self, t, p):
         ''' Function to convert a temperature level to a pixel '''
-        if self.type == 1:
-            scl1 = self.brtemp - (((self.bry - self.pres2Pix(p)) /
-                (self.bry - self.tly)) * self.vspread)
-        else:
-            scl1 = self.brtemp
+        scl1 = self.brtemp - (((self.bry - self.pres2Pix(p)) /
+                        (self.bry - self.tly)) * self.vspread)
         scl2 = self.brx - (((scl1 - t) / self.hspread) * (self.brx - self.tlx))
         return scl2
 
