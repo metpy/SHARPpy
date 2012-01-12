@@ -61,10 +61,19 @@ class Profile(object):
             self.wdirind = kwargs.get('wdirind', 4)
             self.wspdind = kwargs.get('wspdind', 5)
             self.dir2Comp()
-        self.sfc = self.get_sfc()
+        mps = kwargs.get('mps', None)
+        if mps:
+            for i in range(self.gNumLevels):
+                self.gSndg[i][self.uind] = MS2KTS(self.gSndg[i][self.uind])
+                self.gSndg[i][self.vind] = MS2KTS(self.gSndg[i][self.vind])
+
+        # Miscellaneous Sets
+        self.sfc = self.getSfc()
+        self.gModel = kwargs.get('model', 'OBS')
 
 
-    def get_sfc(self):
+
+    def getSfc(self):
         if (self.gNumLevels < 3): return 0
         for i in range(0, self.gNumLevels):
             if (QC(self.gSndg[i][self.tind])): return i
