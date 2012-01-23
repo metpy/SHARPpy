@@ -17,11 +17,12 @@ setup(
     author_email = "patrick.marsh@noaa.gov & john.hart@noaa.gov",
     description = ("Sounding and Hodograph Analysis and Research Program " \
         "for Python"),
-    license = "",
+    license = "BSD",
     keywords = "meteorology soundings analysis",
     url = "",
     packages=['sharppy', 'sharppy.sharptab'],
+    package_data={'': ['*.md']},
+    include_package_data=True,
     long_description="",
-    classifiers=[
-    "Development Status :: 2 - Pre-Alpha"],
+    classifiers=["Development Status :: 2 - Pre-Alpha"],
 )
