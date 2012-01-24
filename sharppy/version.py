@@ -1,7 +1,7 @@
 import os.path
 import subprocess
 release = False
-__version__ = '0.1'
+__version__ = '0.2'
 
 
 _repository_path = os.path.split(__file__)[0]
